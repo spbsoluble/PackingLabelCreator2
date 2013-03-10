@@ -1,1 +1,0 @@
- round((($telemarketer[$tmName]['C']) / $totalCalls) * 100),2)
