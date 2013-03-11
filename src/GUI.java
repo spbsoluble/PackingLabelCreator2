@@ -28,6 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.table.TableColumn;
 import com.itextpdf.text.pdf.PdfPTable;
 import java.awt.Component;
+import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -59,6 +60,8 @@ public class GUI extends javax.swing.JFrame {
     private Stack longBarcodes = new Stack<Object>();       //*unused* intended for document rotation of long barcodes
     private static final String HINT_TEXT = "Invoice , PO, Customer";   //the 'hint' text that shows up on launch in the title field.
     
+    
+    
     /** Creates new form GUI */
     public GUI() {
         initComponents();
@@ -74,20 +77,29 @@ public class GUI extends javax.swing.JFrame {
     private void initComponents() {
 
         jFileChooser1 = new javax.swing.JFileChooser();
-        labelTitle_lbl = new javax.swing.JLabel();
-        headerNumber_lbl = new javax.swing.JLabel();
-        label_title_tf = new javax.swing.JTextField();
-        header_number_tf = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
         serialNumbers_table = new javax.swing.JTable();
+        header_panel = new javax.swing.JPanel();
+        labelTitle_lbl = new javax.swing.JLabel();
+        label_title_tf = new javax.swing.JTextField();
+        headerNumber_lbl = new javax.swing.JLabel();
+        header_number_tf = new javax.swing.JTextField();
+        unitsPerCase_lbl = new javax.swing.JLabel();
+        unitsPerCase_tf = new javax.swing.JTextField();
+        footer_panel = new javax.swing.JPanel();
         clear_btn = new javax.swing.JButton();
         printLabel_btn = new javax.swing.JButton();
         newLabel_btn = new javax.swing.JButton();
         open_btn = new javax.swing.JButton();
-        unitsPerCase_lbl = new javax.swing.JLabel();
-        unitsPerCase_tf = new javax.swing.JTextField();
+        display_panel = new javax.swing.JPanel();
+        serial_lbl = new javax.swing.JLabel();
+        serialEntry_tf = new javax.swing.JTextField();
+        serialAdd_btn = new javax.swing.JButton();
         count_lbl = new javax.swing.JLabel();
         count_lbl_data = new javax.swing.JLabel();
+        serialsContainer_sp = new javax.swing.JScrollPane();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         menuBar = new javax.swing.JMenuBar();
         file_menu = new javax.swing.JMenu();
         newLabel_menuItem = new javax.swing.JMenuItem();
@@ -101,41 +113,6 @@ public class GUI extends javax.swing.JFrame {
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowOpened(java.awt.event.WindowEvent evt) {
                 formWindowOpened(evt);
-            }
-        });
-
-        labelTitle_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
-        labelTitle_lbl.setText("Title:");
-        labelTitle_lbl.setToolTipText("Label Title: Invoice, PO, Customer");
-
-        headerNumber_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
-        headerNumber_lbl.setText("Model Number:");
-        headerNumber_lbl.setToolTipText("Model number");
-
-        label_title_tf.setFont(new java.awt.Font("DialogInput", 0, 20)); // NOI18N
-        label_title_tf.setText("Invoice, PO, Customer");
-        label_title_tf.setToolTipText("Invoice, PO, Customer");
-        label_title_tf.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                label_title_tfMouseClicked(evt);
-            }
-        });
-        label_title_tf.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                label_title_tfKeyPressed(evt);
-            }
-        });
-
-        header_number_tf.setFont(new java.awt.Font("DialogInput", 0, 20)); // NOI18N
-        header_number_tf.setToolTipText("Model number");
-        header_number_tf.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                header_number_tfMouseClicked(evt);
-            }
-        });
-        header_number_tf.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                header_number_tfKeyPressed(evt);
             }
         });
 
@@ -170,9 +147,12 @@ public class GUI extends javax.swing.JFrame {
         ));
         serialNumbers_table.setToolTipText("Scan in serial numbers here.");
         serialNumbers_table.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_LAST_COLUMN);
+        serialNumbers_table.setCellSelectionEnabled(true);
+        serialNumbers_table.setDragEnabled(true);
         serialNumbers_table.setGridColor(new java.awt.Color(0, 0, 0));
         serialNumbers_table.setRowHeight(28);
         serialNumbers_table.setSelectionBackground(new java.awt.Color(0, 204, 204));
+        serialNumbers_table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         serialNumbers_table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 serialNumbers_tableMouseClicked(evt);
@@ -187,6 +167,107 @@ public class GUI extends javax.swing.JFrame {
             }
         });
         jScrollPane1.setViewportView(serialNumbers_table);
+
+        labelTitle_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        labelTitle_lbl.setText("Title:");
+        labelTitle_lbl.setToolTipText("Label Title: Invoice, PO, Customer");
+
+        label_title_tf.setFont(new java.awt.Font("DialogInput", 0, 20)); // NOI18N
+        label_title_tf.setText("Invoice, PO, Customer");
+        label_title_tf.setToolTipText("Invoice, PO, Customer");
+        label_title_tf.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                label_title_tfMouseClicked(evt);
+            }
+        });
+        label_title_tf.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                label_title_tfKeyPressed(evt);
+            }
+        });
+
+        headerNumber_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        headerNumber_lbl.setText("Model Number:");
+        headerNumber_lbl.setToolTipText("Model number");
+
+        header_number_tf.setFont(new java.awt.Font("DialogInput", 0, 20)); // NOI18N
+        header_number_tf.setToolTipText("Model number");
+        header_number_tf.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                header_number_tfMouseClicked(evt);
+            }
+        });
+        header_number_tf.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                header_number_tfKeyPressed(evt);
+            }
+        });
+
+        unitsPerCase_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        unitsPerCase_lbl.setText("Units per box:");
+        unitsPerCase_lbl.setToolTipText("Max number of units in a box.");
+
+        unitsPerCase_tf.setFont(new java.awt.Font("DialogInput", 0, 20)); // NOI18N
+        unitsPerCase_tf.setText("20");
+        unitsPerCase_tf.setToolTipText("Max number of units in a box.");
+        unitsPerCase_tf.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                unitsPerCase_tfMouseClicked(evt);
+            }
+        });
+        unitsPerCase_tf.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                unitsPerCase_tfFocusLost(evt);
+            }
+        });
+        unitsPerCase_tf.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                unitsPerCase_tfKeyPressed(evt);
+            }
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                unitsPerCase_tfKeyReleased(evt);
+            }
+        });
+
+        javax.swing.GroupLayout header_panelLayout = new javax.swing.GroupLayout(header_panel);
+        header_panel.setLayout(header_panelLayout);
+        header_panelLayout.setHorizontalGroup(
+            header_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(header_panelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(header_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, header_panelLayout.createSequentialGroup()
+                        .addComponent(labelTitle_lbl)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(label_title_tf))
+                    .addGroup(header_panelLayout.createSequentialGroup()
+                        .addComponent(headerNumber_lbl)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(header_number_tf))
+                    .addGroup(header_panelLayout.createSequentialGroup()
+                        .addComponent(unitsPerCase_lbl)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(unitsPerCase_tf, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
+        );
+        header_panelLayout.setVerticalGroup(
+            header_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(header_panelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(header_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(label_title_tf)
+                    .addComponent(labelTitle_lbl))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(header_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(headerNumber_lbl)
+                    .addComponent(header_number_tf))
+                .addGap(8, 8, 8)
+                .addGroup(header_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(unitsPerCase_tf, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(unitsPerCase_lbl)))
+        );
+
+        header_panelLayout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {header_number_tf, label_title_tf, unitsPerCase_tf});
 
         clear_btn.setText("clear serials");
         clear_btn.setToolTipText("Clear all serial numbers from the table.");
@@ -220,37 +301,112 @@ public class GUI extends javax.swing.JFrame {
             }
         });
 
-        unitsPerCase_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
-        unitsPerCase_lbl.setText("Units per box:");
-        unitsPerCase_lbl.setToolTipText("Max number of units in a box.");
+        javax.swing.GroupLayout footer_panelLayout = new javax.swing.GroupLayout(footer_panel);
+        footer_panel.setLayout(footer_panelLayout);
+        footer_panelLayout.setHorizontalGroup(
+            footer_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(footer_panelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(open_btn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(newLabel_btn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(clear_btn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(printLabel_btn)
+                .addContainerGap())
+        );
+        footer_panelLayout.setVerticalGroup(
+            footer_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(footer_panelLayout.createSequentialGroup()
+                .addGroup(footer_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(printLabel_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(clear_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(newLabel_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(open_btn, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 2, Short.MAX_VALUE))
+        );
 
-        unitsPerCase_tf.setFont(new java.awt.Font("DialogInput", 0, 20)); // NOI18N
-        unitsPerCase_tf.setText("20");
-        unitsPerCase_tf.setToolTipText("Max number of units in a box.");
-        unitsPerCase_tf.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                unitsPerCase_tfMouseClicked(evt);
+        serial_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        serial_lbl.setText("Serial #:");
+
+        serialEntry_tf.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        serialEntry_tf.setText("Click here and scan.");
+        serialEntry_tf.setToolTipText("Scan serial numbers in here and press enter.");
+        serialEntry_tf.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                serialEntry_tfActionPerformed(evt);
             }
         });
-        unitsPerCase_tf.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                unitsPerCase_tfFocusLost(evt);
-            }
-        });
-        unitsPerCase_tf.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                unitsPerCase_tfKeyPressed(evt);
-            }
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                unitsPerCase_tfKeyReleased(evt);
+
+        serialAdd_btn.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        serialAdd_btn.setText("Add");
+        serialAdd_btn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                serialAdd_btnActionPerformed(evt);
             }
         });
 
         count_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
-        count_lbl.setText("Count:");
+        count_lbl.setText("Serial Count:");
 
         count_lbl_data.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
         count_lbl_data.setText("0");
+
+        jLabel1.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        jLabel1.setText("Box Count:");
+
+        jLabel2.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        jLabel2.setText("0");
+
+        javax.swing.GroupLayout display_panelLayout = new javax.swing.GroupLayout(display_panel);
+        display_panel.setLayout(display_panelLayout);
+        display_panelLayout.setHorizontalGroup(
+            display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(display_panelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(display_panelLayout.createSequentialGroup()
+                        .addGap(39, 39, 39)
+                        .addComponent(serial_lbl)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(serialEntry_tf, javax.swing.GroupLayout.PREFERRED_SIZE, 236, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(serialAdd_btn, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(display_panelLayout.createSequentialGroup()
+                        .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(count_lbl)
+                            .addComponent(jLabel1))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel2)
+                            .addComponent(count_lbl_data))))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(serialsContainer_sp, javax.swing.GroupLayout.DEFAULT_SIZE, 529, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        display_panelLayout.setVerticalGroup(
+            display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(display_panelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(serialsContainer_sp, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                    .addGroup(display_panelLayout.createSequentialGroup()
+                        .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(serial_lbl)
+                                .addComponent(serialEntry_tf, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(serialAdd_btn, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(count_lbl)
+                            .addComponent(count_lbl_data))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel1)
+                            .addComponent(jLabel2))
+                        .addContainerGap())))
+        );
 
         file_menu.setText("File");
 
@@ -292,68 +448,26 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(open_btn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(newLabel_btn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(clear_btn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 535, Short.MAX_VALUE)
-                        .addComponent(printLabel_btn))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(labelTitle_lbl)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(label_title_tf))
+                    .addComponent(footer_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(headerNumber_lbl)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(count_lbl)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(count_lbl_data)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(header_number_tf)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(unitsPerCase_lbl)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(unitsPerCase_tf, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(29, 29, 29)
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 573, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 0, Short.MAX_VALUE)))))
-                .addContainerGap())
+                            .addComponent(header_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(display_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap())
+                    .addComponent(jScrollPane1)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(label_title_tf)
-                    .addComponent(labelTitle_lbl))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(headerNumber_lbl)
-                    .addComponent(header_number_tf)
-                    .addComponent(unitsPerCase_tf, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(unitsPerCase_lbl))
+                .addComponent(header_panel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(count_lbl)
-                    .addComponent(count_lbl_data))
-                .addGap(98, 98, 98)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 408, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(34, 34, 34)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(printLabel_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(clear_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(newLabel_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(open_btn, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(display_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(footer_panel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
-
-        layout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {header_number_tf, label_title_tf, unitsPerCase_tf});
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -1315,6 +1429,28 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
     this.serialNumbers_table.setColumnSelectionInterval(col,col);
     this.serialNumbers_table.setRowSelectionInterval(row,row);
     }//GEN-LAST:event_serialNumbers_tableMousePressed
+
+    private void serialEntry_tfActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serialEntry_tfActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_serialEntry_tfActionPerformed
+
+    private void serialAdd_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serialAdd_btnActionPerformed
+        
+        this.serialsContainer_sp.add(new SerialEntry(1,"32132136546").drawSerialEntry());
+        System.out.println("Clicky");
+        this.serialsContainer_sp.revalidate();
+        this.serialsContainer_sp.updateUI();
+        this.serialsContainer_sp.repaint();
+        this.header_panel.add(new SerialEntry(1,"32132136546").drawSerialEntry());
+        this.header_panel.repaint();
+    }//GEN-LAST:event_serialAdd_btnActionPerformed
+    
+    private boolean addSerial(){
+        String serialNumber = this.serialEntry_tf.getText();
+        
+        
+        return true;
+    }
     
 public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -1364,10 +1500,15 @@ public static void main(String args[]) {
     private javax.swing.JButton clear_btn;
     private javax.swing.JLabel count_lbl;
     private javax.swing.JLabel count_lbl_data;
+    private javax.swing.JPanel display_panel;
     private javax.swing.JMenu file_menu;
+    private javax.swing.JPanel footer_panel;
     private javax.swing.JLabel headerNumber_lbl;
     private javax.swing.JTextField header_number_tf;
+    private javax.swing.JPanel header_panel;
     private javax.swing.JFileChooser jFileChooser1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel labelTitle_lbl;
     private javax.swing.JTextField label_title_tf;
@@ -1378,7 +1519,11 @@ public static void main(String args[]) {
     private javax.swing.JMenuItem open_menuItem;
     private javax.swing.JButton printLabel_btn;
     private javax.swing.JMenuItem print_menu_item;
+    private javax.swing.JButton serialAdd_btn;
+    private javax.swing.JTextField serialEntry_tf;
     private javax.swing.JTable serialNumbers_table;
+    private javax.swing.JLabel serial_lbl;
+    private javax.swing.JScrollPane serialsContainer_sp;
     private javax.swing.JLabel unitsPerCase_lbl;
     private javax.swing.JTextField unitsPerCase_tf;
     // End of variables declaration//GEN-END:variables
