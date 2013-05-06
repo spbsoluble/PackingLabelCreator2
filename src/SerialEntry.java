@@ -1,7 +1,17 @@
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Insets;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
@@ -14,50 +24,85 @@ import javax.swing.JPanel;
  *
  * @author Sean
  */
-public class SerialEntry{
+public class SerialEntry extends JPanel implements MouseListener{
     private int count;
     private String serialNumber;
     private JLabel count_lbl;
     private JLabel serialNumber_lbl;
     private JLabel delete_lbl;
     private JLabel edit_lbl;
-    private JPanel container_panel;
+    private GUI parent;
     
     ImageIcon deleteIcon = new ImageIcon("the_delete_icon.png");
     ImageIcon editIcon = new ImageIcon("application_edit.png");
     
-    GridLayout panelLayout = new GridLayout(0,4);
+    //BorderLayout panelLayout = new BorderLayout();
+    GridBagLayout panelLayout = new GridBagLayout();
     
-    public SerialEntry(int count, String serialNumber){
+    public SerialEntry(int count, String serialNumber, GUI parent){
         this.count = count;
+        this.parent = parent;
         this.serialNumber = serialNumber;
         createEntry();
+        this.addMouseListener(this);
     }
     
     private void createEntry(){
-        container_panel = new JPanel();
-        container_panel.setLayout(panelLayout);
+        this.setLayout(panelLayout);
+        GridBagConstraints constraints = new GridBagConstraints();
+        //RIGHT GAP
+        constraints.insets = new Insets(5,5,5,5);
         
-        serialNumber_lbl = new JLabel(this.serialNumber, JLabel.LEFT);
-        count_lbl = new JLabel(""+this.count, JLabel.LEFT);
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.gridwidth = 1;
+        constraints.gridheight = 1;
+        constraints.fill = 0;
+        count_lbl = new JLabel(""+this.count+") ");
+        this.add(count_lbl,constraints);
         
+        constraints.gridx = 1;
+        constraints.gridy = 0;
+        constraints.gridwidth = 5;
+        constraints.gridheight = 1;
+        serialNumber_lbl = new JLabel(this.serialNumber);
+        this.add(serialNumber_lbl, constraints);
+        
+        /*JPanel countPanel = new JPanel(new FlowLayout());
+        countPanel.add(count_lbl);
+        countPanel.add(serialNumber_lbl);*/
+        
+        
+        constraints.gridx = 6;
+        constraints.gridy = 0;
+        constraints.gridwidth = 1;
+        constraints.gridheight = 1;
         edit_lbl = new JLabel();
         edit_lbl.setIcon(editIcon);
+        //this.add(edit_lbl,constraints);
         
+        constraints.gridx = 7;
+        constraints.gridy = 0;
+        constraints.gridwidth = 1;
+        constraints.gridheight = 1;
         delete_lbl = new JLabel();
         delete_lbl.setIcon(deleteIcon);
-        
-       container_panel.add(count_lbl);
-       container_panel.add(serialNumber_lbl);
-       container_panel.add(edit_lbl);
-       container_panel.add(delete_lbl);
+        //this.add(delete_lbl,constraints);
+    
+      
+       //this.add(serialNumber_lbl);
+       /*countPanel.add(edit_lbl);
+       countPanel.add(delete_lbl);
+       
+        this.add(countPanel,BorderLayout.WEST);*/
     }
     
-    public JPanel drawSerialEntry(){
-        return this.container_panel;
+    private void setPanelSizes(){
+        this.count_lbl.setSize(50, 100);
+        this.count_lbl.setPreferredSize(new Dimension(50,1000));
     }
     
-    public String getSerialNumber(){
+   public String getSerialNumber(){
         return this.serialNumber;
     }
     
@@ -65,6 +110,7 @@ public class SerialEntry{
         return this.count;
     }
     
+   
     public SerialEntry setSerialNumber(String serialNumber){
         this.serialNumber = serialNumber;
         createEntry();
@@ -75,5 +121,38 @@ public class SerialEntry{
         this.count = count;
         createEntry();
         return this;
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent me) {
+        System.out.println("I was clicked and my number is " + count);
+        this.removeAll();
+        this.validate();
+        this.repaint();
+        this.notifyParent();
+    }
+
+    @Override
+    public void mousePressed(MouseEvent me) {
+         
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent me) {
+         
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent me) {
+        
+    }
+
+    @Override
+    public void mouseExited(MouseEvent me) {
+        //throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public void notifyParent(){
+        parent.removeSerial(count);
     }
 }

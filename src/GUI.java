@@ -27,8 +27,12 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.TableColumn;
 import com.itextpdf.text.pdf.PdfPTable;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -36,11 +40,14 @@ import javax.swing.filechooser.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 import javax.swing.AbstractCellEditor;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 /*
@@ -59,8 +66,10 @@ public class GUI extends javax.swing.JFrame {
     private int labelSize = PACK_SIZE;                      //number of rows the label input table contains
     private Stack longBarcodes = new Stack<Object>();       //*unused* intended for document rotation of long barcodes
     private static final String HINT_TEXT = "Invoice , PO, Customer";   //the 'hint' text that shows up on launch in the title field.
-    
-    
+    private int serialCount = 1;
+    private int boxCount = 1;
+    GridBagConstraints constraints;
+    private List<SerialEntry> serialEntries = new ArrayList<SerialEntry>();
     
     /** Creates new form GUI */
     public GUI() {
@@ -77,8 +86,6 @@ public class GUI extends javax.swing.JFrame {
     private void initComponents() {
 
         jFileChooser1 = new javax.swing.JFileChooser();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        serialNumbers_table = new javax.swing.JTable();
         header_panel = new javax.swing.JPanel();
         labelTitle_lbl = new javax.swing.JLabel();
         label_title_tf = new javax.swing.JTextField();
@@ -96,10 +103,11 @@ public class GUI extends javax.swing.JFrame {
         serialEntry_tf = new javax.swing.JTextField();
         serialAdd_btn = new javax.swing.JButton();
         count_lbl = new javax.swing.JLabel();
-        count_lbl_data = new javax.swing.JLabel();
-        serialsContainer_sp = new javax.swing.JScrollPane();
+        serialCount_lbl_data = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
+        boxCount_lbl_data = new javax.swing.JLabel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
         menuBar = new javax.swing.JMenuBar();
         file_menu = new javax.swing.JMenu();
         newLabel_menuItem = new javax.swing.JMenuItem();
@@ -108,65 +116,16 @@ public class GUI extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Packing Label Creator");
-        setMinimumSize(new java.awt.Dimension(600, 750));
+        setMaximumSize(new java.awt.Dimension(800, 600));
+        setMinimumSize(new java.awt.Dimension(300, 600));
         setName("Hard drive packing label creator"); // NOI18N
+        setPreferredSize(new java.awt.Dimension(800, 600));
+        setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowOpened(java.awt.event.WindowEvent evt) {
                 formWindowOpened(evt);
             }
         });
-
-        serialNumbers_table.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        serialNumbers_table.setFont(new java.awt.Font("Monospaced", 0, 36)); // NOI18N
-        serialNumbers_table.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null}
-            },
-            new String [] {
-                "Serial Numbers"
-            }
-        ));
-        serialNumbers_table.setToolTipText("Scan in serial numbers here.");
-        serialNumbers_table.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_LAST_COLUMN);
-        serialNumbers_table.setCellSelectionEnabled(true);
-        serialNumbers_table.setDragEnabled(true);
-        serialNumbers_table.setGridColor(new java.awt.Color(0, 0, 0));
-        serialNumbers_table.setRowHeight(28);
-        serialNumbers_table.setSelectionBackground(new java.awt.Color(0, 204, 204));
-        serialNumbers_table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        serialNumbers_table.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                serialNumbers_tableMouseClicked(evt);
-            }
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-                serialNumbers_tableMousePressed(evt);
-            }
-        });
-        serialNumbers_table.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                serialNumbers_tableKeyPressed(evt);
-            }
-        });
-        jScrollPane1.setViewportView(serialNumbers_table);
 
         labelTitle_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
         labelTitle_lbl.setText("Title:");
@@ -239,7 +198,7 @@ public class GUI extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, header_panelLayout.createSequentialGroup()
                         .addComponent(labelTitle_lbl)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(label_title_tf))
+                        .addComponent(label_title_tf, javax.swing.GroupLayout.DEFAULT_SIZE, 686, Short.MAX_VALUE))
                     .addGroup(header_panelLayout.createSequentialGroup()
                         .addComponent(headerNumber_lbl)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -333,9 +292,19 @@ public class GUI extends javax.swing.JFrame {
         serialEntry_tf.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
         serialEntry_tf.setText("Click here and scan.");
         serialEntry_tf.setToolTipText("Scan serial numbers in here and press enter.");
+        serialEntry_tf.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                serialEntry_tfMouseClicked(evt);
+            }
+        });
         serialEntry_tf.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 serialEntry_tfActionPerformed(evt);
+            }
+        });
+        serialEntry_tf.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                serialEntry_tfKeyPressed(evt);
             }
         });
 
@@ -350,14 +319,46 @@ public class GUI extends javax.swing.JFrame {
         count_lbl.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
         count_lbl.setText("Serial Count:");
 
-        count_lbl_data.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
-        count_lbl_data.setText("0");
+        serialCount_lbl_data.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        serialCount_lbl_data.setText("0");
 
         jLabel1.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
         jLabel1.setText("Box Count:");
 
-        jLabel2.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
-        jLabel2.setText("0");
+        boxCount_lbl_data.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        boxCount_lbl_data.setText("0");
+
+        jTable1.setFont(new java.awt.Font("DialogInput", 1, 18)); // NOI18N
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "#", "Serial"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, true
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jTable1.setColumnSelectionAllowed(true);
+        jTable1.getTableHeader().setReorderingAllowed(false);
+        jScrollPane2.setViewportView(jTable1);
+        jTable1.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        jTable1.getColumnModel().getColumn(0).setMinWidth(50);
+        jTable1.getColumnModel().getColumn(0).setPreferredWidth(50);
+        jTable1.getColumnModel().getColumn(0).setMaxWidth(50);
 
         javax.swing.GroupLayout display_panelLayout = new javax.swing.GroupLayout(display_panel);
         display_panel.setLayout(display_panelLayout);
@@ -379,18 +380,18 @@ public class GUI extends javax.swing.JFrame {
                             .addComponent(jLabel1))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2)
-                            .addComponent(count_lbl_data))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(serialsContainer_sp, javax.swing.GroupLayout.DEFAULT_SIZE, 529, Short.MAX_VALUE)
-                .addContainerGap())
+                            .addComponent(boxCount_lbl_data)
+                            .addComponent(serialCount_lbl_data))))
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 270, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         display_panelLayout.setVerticalGroup(
             display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(display_panelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(serialsContainer_sp, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(display_panelLayout.createSequentialGroup()
                         .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -400,12 +401,13 @@ public class GUI extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(count_lbl)
-                            .addComponent(count_lbl_data))
+                            .addComponent(serialCount_lbl_data))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel1)
-                            .addComponent(jLabel2))
-                        .addContainerGap())))
+                            .addComponent(boxCount_lbl_data))
+                        .addGap(0, 237, Short.MAX_VALUE)))
+                .addContainerGap())
         );
 
         file_menu.setText("File");
@@ -451,10 +453,11 @@ public class GUI extends javax.swing.JFrame {
                     .addComponent(footer_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(header_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(display_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addContainerGap())
-                    .addComponent(jScrollPane1)))
+                            .addComponent(display_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(header_panel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 1, Short.MAX_VALUE)))
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -462,8 +465,6 @@ public class GUI extends javax.swing.JFrame {
                 .addComponent(header_panel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(display_panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(footer_panel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -490,23 +491,8 @@ public class GUI extends javax.swing.JFrame {
  * @param: actionEvent evt
  */
 private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clear_btnActionPerformed
-    int rows = this.serialNumbers_table.getRowCount();
-    
-    for(int i = 0; i < rows; i++){
-        this.serialNumbers_table.setValueAt("", i, 0);
-    }
-    
-    //Reset the number of rows in the table to the default number PACK_SIZE
-    DefaultTableModel tm = (DefaultTableModel)serialNumbers_table.getModel();
-    tm.setNumRows(PACK_SIZE);
-    labelSize = PACK_SIZE;
-     
-    this.serialNumbers_table.requestFocusInWindow();
-    this.serialNumbers_table.setColumnSelectionInterval(0,0);
-    this.serialNumbers_table.setRowSelectionInterval(0,0);
-    
-    //scroll to top row
-    this.serialNumbers_table.scrollRectToVisible(new java.awt.Rectangle(0, 0));
+//    this.serialsContainer_p.setBackground(Color.yellow);
+  //  this.serialsContainer_p.setLayout(new GridBagLayout());
 }//GEN-LAST:event_clear_btnActionPerformed
 
 /*
@@ -677,17 +663,7 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
 * @returns false - if it goes through the whole table and finds nothing.
 */
 private boolean findData(){
-     for(int i = 0; i < serialNumbers_table.getRowCount(); i++){
-         try{
-           Object obj_value = this.serialNumbers_table.getValueAt(i, 0);
-            String value = obj_value.toString();
-            //if you find data in the table then return true
-            if(!value.trim().equals("")) 
-                return true;
-         } catch (NullPointerException npe) {
-             continue;
-         }
-     }
+    
      //else the table is empty and return false
      return false;
  }
@@ -777,23 +753,7 @@ private boolean findData(){
         csvWriter.newLine();    
         
         //loop to cycle through the serial numbers table data
-        for(int i = 0; i < this.serialNumbers_table.getRowCount(); i++){
-            try{
-                 Object obj_value = this.serialNumbers_table.getValueAt(i, 0);  //value of the current row being read
-                 String value = obj_value.toString();                           //convert read value to a string
-                 writer.write(value);                                           //write the value to the file
-                 csvWriter.write(value);
-                 csvWriter.write(",");                                          //put a comma for the csv
-
-                 writer.newLine();                                              //insert line break
-                 csvWriter.newLine();
-             
-            } catch (NullPointerException npe) {   //catches null pointers thrown when .getValueAt is null
-                continue;
-            }
-        }
-        writer.close(); //close files
-        csvWriter.close();
+       
      } catch (FileNotFoundException fnf) {  //filenotfound thrown when directory is missing
          //try and recreate directory structure
          if(createFileDirectory()){ //if successful then call this function again
@@ -875,7 +835,7 @@ private boolean findData(){
                 
                 //if you're at the max number of rows in the table, increment
                 if(rowCount >= labelSize){
-                    increaseTableSize();
+                    ;//increaseTableSize();
                 }
                 
                 //if the current line contains 'title:' then it must be the title of the label
@@ -909,14 +869,14 @@ private boolean findData(){
                     if(isCSV){                                              //if it's a csv remove the comma at the end
                         text = text.substring(0, text.length()-1);
                     }
-                    this.serialNumbers_table.setValueAt(text, rowCount, 0); //set the value of the row to the read data
+                    
                     rowCount++;                                             //increment the row count
                 }
                 currentLine = reader.readLine();
             }
             //check once more to see if more lines need be added to the input table
             if(rowCount >= labelSize){
-                increaseTableSize();
+                ;//increaseTableSize();
             }
         } catch (FileNotFoundException fnf) { //should never be thrown, but will occur if loading file disappears
             return;
@@ -947,17 +907,7 @@ private boolean findData(){
   */
  private int getTableSize(){
      int dataCount = 0;
-     for(int i = 0; i < this.serialNumbers_table.getRowCount(); i++){
-          try{
-           Object obj_value = this.serialNumbers_table.getValueAt(i, 0);
-            String value = obj_value.toString();
-            //if you find data in the table then return true
-            if(!value.trim().equals("")) 
-                dataCount++;
-         } catch (NullPointerException npe) {
-             continue;
-         }
-     }
+     
      return dataCount;
  }
  
@@ -1055,59 +1005,7 @@ private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GE
         addHeader(document, writer, caseNumber, numberOfCases); //add title and header to the document
         
         
-        for(int i = 0; i < this.serialNumbers_table.getRowCount(); i ++, counter++){
-            try{
-                Object obj_value = this.serialNumbers_table.getValueAt(i, 0); //get the value of the current table row
-                String value = obj_value.toString();                          //convert value to string
-                
-                //if for whatever reason the value is null or empty do nothing, decrement the counter and continue to the next row
-                if(value == null || value.trim().equals("")){
-                    counter--;
-                    continue;
-                } else {
-                    boolean atLabelCapacity = (i % PACK_SIZE == 0 && i != 0);   //check to see if you're at the max units per label
-                    boolean atBoxCapacity = (i % unitsPerLabel == 0 && i != 0); //check to see if you're at max units for a box
-                    if(atBoxCapacity || atLabelCapacity) {                      //if you're at capacity you're going to need to make a newlabel
-                        if((atLabelCapacity && atBoxCapacity) || atBoxCapacity){ //if you're at both capacities then increment case number
-                                                                                 //of if you're just at box capacity increment case number
-                            caseNumber++;
-                        } 
-                        document.add(table);                                    //add the current table to the document
-                        document.newPage();                                     //create a new page
-                        addHeader(document, writer, caseNumber, numberOfCases); //add header to the new page
-                        table = initTable(3);                                   //initialize a new table object
-                    }
-                    
-                    //create cell to hold current item number/iteration/count
-                    cell = new PdfPCell(new Paragraph(""+counter, new Font(Font.FontFamily.HELVETICA, 6)));
-                    cell.setBorder(0);              //remove cell border
-                    cell.setPaddingTop(1f);         //pad the top of the cell a little for spacing
-                    table.addCell(cell);            //add the cell to table
-                    
-                    code39.setCode(value.toUpperCase());    //set barcode code
-                    
-                    
-                    if(value.length() > 40){            //if you're over 40 chars adjust the scale a bit
-                        code39.setX(.4f);
-                    }
-                    
-                    //create barcode image
-                    com.itextpdf.text.Image tehImage = code39.createImageWithBarcode(cb, null, null); 
-                    
-                    
-                    /*if(value.length() > 40) {//&& value.length() < 25)
-                        //tehImage.scaleAbsoluteWidth(273);
-                    */
-                    
-                    cell = new PdfPCell(tehImage);  //add image data to cell object
-                    cell.setBorder(0);              //remove cell border
-                    cell.setPaddingTop(1f);         //set the top padding for spacing
-                    table.addCell(cell);            //add the cell to the table
-                }
-            } catch(Exception e) {  //catch any exceptions and just press forward
-                continue;
-            }
-        }
+       
         
         document.add(table);  //finally add table to the document
         
@@ -1166,7 +1064,6 @@ private void newLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
      this.header_number_tf.setText(null);   //clear the model number field
      this.label_title_tf.setText(null);     //clear the title field
      this.unitsPerCase_tf.setText("20");    //reset units per case to 20
-     this.serialNumbers_table.clearSelection(); //clear any selected rows on the serials table
      focusTf();                             //set focus back to the title field
 }//GEN-LAST:event_newLabel_btnActionPerformed
 
@@ -1192,72 +1089,9 @@ private void label_title_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:
 private void header_number_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_header_number_tfKeyPressed
   int keycode = evt.getKeyCode();
   if(keycode == 10){
-        this.serialNumbers_table.requestFocusInWindow();
-        this.serialNumbers_table.setColumnSelectionInterval(0,0);
-        this.serialNumbers_table.setRowSelectionInterval(0,0);
+       
     }
 }//GEN-LAST:event_header_number_tfKeyPressed
-
-/*
- * Function: serialNumbers_tableKetPressed
- * Purpose: If delete is pressed it removes the row, if you do a line return on the last row then it
- * calls the function to increase the table row count by PACK_SIZE
- * @param: ActionEvent evt
- */
-private void serialNumbers_tableKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_serialNumbers_tableKeyPressed
-    int keyCode = evt.getKeyCode();
-    //System.out.println(evt);
-    //System.out.println(evt.getKeyCode());
-    if(keyCode == 127){                     //if delete key is pressed
-        JTable j = (JTable)evt.getSource(); //get the table object
-        int row = j.getSelectedRow();       //get the selected row index
-        DefaultTableModel tm = (DefaultTableModel)serialNumbers_table.getModel();   //get the table model
-        tm.removeRow(row);                  //remove the row from the table model
-        if(tm.getRowCount() < PACK_SIZE)    //if you removed a row make sure you're not under PACK_SIZE
-            tm.addRow((java.util.Vector)null); //if you are then add a row to the bottom of the table
-        //System.out.println(evt.getKeyCode());
-    } else if (keyCode == 10) { //else if you did a line return then check to see if you need to increase table size
-        JTable j = (JTable)evt.getSource(); //get the table
-        int row = j.getSelectedRow();       //get the selected row
-      
-        if(row == labelSize-1){             //if you're on the last row then increase size
-           increaseTableSize();
-        }
-    }
-}//GEN-LAST:event_serialNumbers_tableKeyPressed
-
-/*
- * Function: increaseTableSize
- * Purpose: Increases the number of rows on the serialsNumbers table object.
- */
-private void increaseTableSize(){
-    DefaultTableModel tm = (DefaultTableModel)serialNumbers_table.getModel();   //get the table model
-    labelSize += PACK_SIZE; //increase label size by PACK_SIZE to ensure every row after PACK_SIZE doesn't call this function
-     
-    for(int i = 0; i < PACK_SIZE; i++){     //add PACK_SIZE number of empty rows to the table
-        tm.addRow((java.util.Vector)null);
-    }
-}
-
-/*
- * Function: serialNumbers_tableMouseClicked
- * Purpose: An attempt to avert auto editing on click, but failure
- * @param: MouseEvent evt
- */
-private void serialNumbers_tableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_serialNumbers_tableMouseClicked
-    System.out.println(evt.getPoint());
-    System.out.println(evt.getComponent());
-    
-    //Component component = evt.getComponent();
-    //JTextField tf = (JTextField) component;
-    //System.out.println(tf.getText());
-    
-    int row = this.serialNumbers_table.rowAtPoint(evt.getPoint());
-    int col = this.serialNumbers_table.columnAtPoint(evt.getPoint());
-    this.serialNumbers_table.requestFocusInWindow();
-    this.serialNumbers_table.setColumnSelectionInterval(col,col);
-    this.serialNumbers_table.setRowSelectionInterval(row,row);
-}//GEN-LAST:event_serialNumbers_tableMouseClicked
 
 /*
  * Function: print_menu_itemActionPerformed
@@ -1276,9 +1110,6 @@ private void print_menu_itemActionPerformed(java.awt.event.ActionEvent evt) {//G
  * @param: WindowEvent evt
  */
 private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        int vColIndex = 0;
-        TableColumn col = serialNumbers_table.getColumnModel().getColumn(vColIndex);
-        col.setCellEditor(new MyTableCellEditor());
         //make sure the directory is created in order to open
         createFileDirectory();
         File openDirectory = new File(System.getProperty("user.home")+"\\Documents\\PackingLabels\\LabelFiles");
@@ -1287,7 +1118,13 @@ private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event
         jFileChooser1.setAcceptAllFileFilterUsed(false);
         jFileChooser1.setFileFilter(filter);
         
-        this.serialNumbers_table.setFont(new java.awt.Font("Arial", 0, 30));
+        //this.jScrollPane2 = new JScrollPane(this.jTable1);
+        //LineNumberTableRowHeader tableLineNumber = new LineNumberTableRowHeader(this.jScrollPane2, this.jTable1);
+        //tableLineNumber.setBackground(Color.LIGHT_GRAY);
+        //this.jScrollPane2.setRowHeaderView(tableLineNumber);
+        //this.pack();
+        //this.validate();
+        //this.repaint();
 }//GEN-LAST:event_formWindowOpened
 
 /*
@@ -1400,9 +1237,7 @@ private void unitsPerCase_tfKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRS
 private void unitsPerCase_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_unitsPerCase_tfKeyPressed
    int keycode = evt.getKeyCode();
     if(keycode == 10){
-        this.serialNumbers_table.requestFocusInWindow();
-        this.serialNumbers_table.setColumnSelectionInterval(0,0);
-        this.serialNumbers_table.setRowSelectionInterval(0,0);
+      
     }
 }//GEN-LAST:event_unitsPerCase_tfKeyPressed
 
@@ -1414,41 +1249,127 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
     this.unitsPerCase_tf.selectAll();
 }//GEN-LAST:event_unitsPerCase_tfMouseClicked
 
-    private void serialNumbers_tableMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_serialNumbers_tableMousePressed
-           System.out.println(evt.getPoint());
-    System.out.println(evt.getComponent());
-    
-    Component component = evt.getComponent();
-    JTable tb = (JTable) component;
-    
-    
-    int row = tb.rowAtPoint(evt.getPoint());
-    int col = tb.columnAtPoint(evt.getPoint());
-    System.out.println(tb.getValueAt(row, col));
-    this.serialNumbers_table.requestFocusInWindow();
-    this.serialNumbers_table.setColumnSelectionInterval(col,col);
-    this.serialNumbers_table.setRowSelectionInterval(row,row);
-    }//GEN-LAST:event_serialNumbers_tableMousePressed
-
     private void serialEntry_tfActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serialEntry_tfActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_serialEntry_tfActionPerformed
 
     private void serialAdd_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serialAdd_btnActionPerformed
-        
-        this.serialsContainer_sp.add(new SerialEntry(1,"32132136546").drawSerialEntry());
-        System.out.println("Clicky");
-        this.serialsContainer_sp.revalidate();
-        this.serialsContainer_sp.updateUI();
-        this.serialsContainer_sp.repaint();
-        this.header_panel.add(new SerialEntry(1,"32132136546").drawSerialEntry());
-        this.header_panel.repaint();
+        String temp = this.getSerial();
+        if(temp == null || temp.trim().equals("")){
+               JOptionPane.showMessageDialog(null,
+                "Please enter a serial number",
+                "Empty serial number error",
+                JOptionPane.ERROR_MESSAGE);
+        } else {
+            //this.addSerial();
+            this.addSerialEntry();
+            //this.serialCount++;
+        }
     }//GEN-LAST:event_serialAdd_btnActionPerformed
+
+    public String getSerial(){
+        return this.serialEntry_tf.getText();
+    }
+    
+    private void serialEntry_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_serialEntry_tfMouseClicked
+        
+        this.serialEntry_tf.selectAll();
+    }//GEN-LAST:event_serialEntry_tfMouseClicked
+
+    private void serialEntry_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_serialEntry_tfKeyPressed
+       
+        if(evt.getKeyCode() == KeyEvent.VK_ENTER){
+            String temp = this.getSerial();
+            if(temp == null || temp.trim().equals("")){
+                   JOptionPane.showMessageDialog(null,
+                    "Please enter a serial number",
+                    "Empty serial number error",
+                    JOptionPane.ERROR_MESSAGE);
+            } else {
+                //this.addSerial();
+                this.addSerialEntry();
+                //this.serialCount++;
+            }
+        }
+    }//GEN-LAST:event_serialEntry_tfKeyPressed
+    
+    public void addSerialEntry(){
+        DefaultTableModel model = (DefaultTableModel) this.jTable1.getModel();
+        model.addRow(new Object[]{this.serialCount,"ABC123"});
+        serialCount++;
+    }
+    
+    private boolean checkNewBox(){
+        return (this.serialCount - 1) % getUnitsPerBox() == 0;
+    }
+    
+    private int getUnitsPerBox(){
+        String unitsPerBox = this.unitsPerCase_tf.getText();
+        Integer upb = Integer.parseInt(unitsPerBox);
+        return upb.intValue();
+    }
+    
+    public boolean removeSerial(int index){
+        //logic to renumber entrys after the removed entry
+        this.serialEntries.remove(index);
+//        this.serialsContainer_p.revalidate();
+ //       this.serialsContainer_p.repaint();
+        this.serialCount--;
+        this.serialCount_lbl_data.setText(this.serialCount+"");
+        System.out.println(this.serialCount);
+        //logic for decrement box count if needed
+        
+        return true; 
+    }
+    
+    public void updateSerialsNumbering(int startIndex){
+        
+    }
     
     private boolean addSerial(){
-        String serialNumber = this.serialEntry_tf.getText();
+        this.serialCount_lbl_data.setText(""+this.serialCount);
+        
+        /*Fix logic to move stuff up down and center here, deals with weighty
+         *
+         */
+         
+        if(serialCount <= 1){
+            System.out.println("I got mah layout");
+           // this.serialsContainer_p.setLayout(new GridBagLayout());
+            constraints = new GridBagConstraints();
+            constraints.anchor = GridBagConstraints.NORTHWEST;
+            constraints.weightx = 1;
+            //constraints.anchor = GridBagConstraints.NORTHWEST;
+            
+            constraints.insets = new Insets(1,1,1,1);
+            constraints.weighty = 0;
+        } else {
+            constraints.weighty = 0;
+            constraints.weightx = 0;
+        }
         
         
+        constraints.gridx = 0;
+        constraints.gridy = serialCount-1;
+        constraints.gridwidth = 1;
+        constraints.gridheight = 1;
+        
+        SerialEntry se = new SerialEntry(serialCount,this.serialEntry_tf.getText(),this);
+        
+        //this.serialsContainer_p.add(se,constraints);
+        this.serialEntries.add(se);
+        this.serialEntries.add(se);
+        System.out.println("Clicky");
+        //this.serialsContainer_p.revalidate();
+        //this.serialsContainer_p.repaint();
+        this.serialCount += 1;
+        this.pack();
+        if(checkNewBox()){
+            JOptionPane.showMessageDialog(null, "You've completed a box " + this.boxCount, "Box complete", JOptionPane.WARNING_MESSAGE);
+            this.boxCount_lbl_data.setText(""+this.boxCount);
+            this.boxCount++;    
+        }
+          this.serialEntry_tf.setText(null);
         return true;
     }
     
@@ -1497,9 +1418,9 @@ public static void main(String args[]) {
         });
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel boxCount_lbl_data;
     private javax.swing.JButton clear_btn;
     private javax.swing.JLabel count_lbl;
-    private javax.swing.JLabel count_lbl_data;
     private javax.swing.JPanel display_panel;
     private javax.swing.JMenu file_menu;
     private javax.swing.JPanel footer_panel;
@@ -1508,8 +1429,8 @@ public static void main(String args[]) {
     private javax.swing.JPanel header_panel;
     private javax.swing.JFileChooser jFileChooser1;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JTable jTable1;
     private javax.swing.JLabel labelTitle_lbl;
     private javax.swing.JTextField label_title_tf;
     private javax.swing.JMenuBar menuBar;
@@ -1520,52 +1441,12 @@ public static void main(String args[]) {
     private javax.swing.JButton printLabel_btn;
     private javax.swing.JMenuItem print_menu_item;
     private javax.swing.JButton serialAdd_btn;
+    private javax.swing.JLabel serialCount_lbl_data;
     private javax.swing.JTextField serialEntry_tf;
-    private javax.swing.JTable serialNumbers_table;
     private javax.swing.JLabel serial_lbl;
-    private javax.swing.JScrollPane serialsContainer_sp;
     private javax.swing.JLabel unitsPerCase_lbl;
     private javax.swing.JTextField unitsPerCase_tf;
     // End of variables declaration//GEN-END:variables
     
-    /*
-     * Class: MyTableCellEditor
-     * @author: Sean Bailey
-     * Date Created: 5/17/2012
-     * Date Modified: 5/18/2012
-     * Purpose: Basically a custom cell editor to stop default appending action of a table cell
-     * to simply click and delete all data...this probably needs to be developed more. 
-     */
-    private class MyTableCellEditor extends AbstractCellEditor implements TableCellEditor {
-        // This is the component that will handle the editing of the cell value
-        JComponent component = new JTextField();
-
-        // This method is called when a cell value is edited by the user.
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int rowIndex, int vColIndex) {
-            // 'value' is value contained in the cell located at (rowIndex, vColIndex)
-
-            if (isSelected) {
-                // cell (and perhaps other cells) are selected
-                System.out.println(value);
-            }
-
-            // Configure the component with the specified value
-            
-            ((JTextField)component).setText(null);    //set text on edit to empty
-            
-
-            // Return the configured component
-            return component;
-        }
-
-        // This method is called when editing is completed.
-        // It must return the new value to be stored in the cell.
-        public Object getCellEditorValue() {
-            return ((JTextField)component).getText();
-        }
-    
-    }
-    
- 
 }
 
