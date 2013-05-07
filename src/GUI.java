@@ -15,7 +15,6 @@ import com.itextpdf.text.pdf.PdfDictionary;
 import com.itextpdf.text.pdf.PdfName;
 import com.itextpdf.text.pdf.PdfNumber;
 import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.pdf.PdfWriter;
 import java.awt.Desktop;
@@ -24,18 +23,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.table.TableColumn;
 import com.itextpdf.text.pdf.PdfPTable;
-import java.awt.Color;
-import java.awt.Component;
+import com.itextpdf.text.pdf.PdfReader;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -43,22 +34,16 @@ import javax.swing.filechooser.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.AbstractCellEditor;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
 import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
+
 /*
 * Class: GUI
 * @author: Sean Bailey
@@ -71,13 +56,11 @@ import javax.swing.table.TableCellEditor;
  
 public class GUI extends javax.swing.JFrame {
     private static final int PACK_SIZE = 20;                //max number of elements that will fit on a label
-    private static final String FILE_EXTENSION = ".lbl";    //default file extension for the data save files
+    
     private int labelSize = PACK_SIZE;                      //number of rows the label input table contains
     private Stack longBarcodes = new Stack<Object>();       //*unused* intended for document rotation of long barcodes
     private static final String HINT_TEXT = "Invoice , PO, Customer";   //the 'hint' text that shows up on launch in the title field.
     private int serialCount = 0;
-    private int boxCount = 1;
-    GridBagConstraints constraints;
     ArrayList<String> serialEntries = new ArrayList<String>();
     boolean dataSaved = true;
     
@@ -492,17 +475,6 @@ public class GUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    /*
-     * Function: focusTf
-     * Purpose: sets the focus on the label title text field on window load and every time 
-     * new label is called and also repopulates the default 'hint' text
-     */
-    public void focusTf(){
-        this.label_title_tf.requestFocusInWindow();
-        this.label_title_tf.setText(HINT_TEXT);
-        this.label_title_tf.selectAll();
-    }
-    
 /*
  * Function: clear_btnActionPerformed
  * Purpose: clears the JTable that holds the serial numbers. One at a time, and sets the focus
@@ -516,7 +488,6 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
     }
     this.serialEntries = new ArrayList<String>();
     this.updateSerialCounter(-this.serialCount);
-    this.boxCount = 0;
 }//GEN-LAST:event_clear_btnActionPerformed
 
 /*
@@ -653,21 +624,9 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
         //adds serial numbers label to the document
         document.add(serials);
     }
- 
-/*
-* Function: findData()
-* Purpose: checks to see if the serials number table object has any data in the table rows.
-* @returns true - at the first non-null/empty value in the table
-* @returns false - if it goes through the whole table and finds nothing.
-*/
-private boolean findData(){
-    
-     //else the table is empty and return false
-     return true;
- }
- 
- /*
- * Function: generateLongPDF
+
+  /*
+ * Function: generateLongPDF(deprecated)
  * Purpose: *unused* Generates a pdf file that interchanges the height and width dimensions and then
  * calls the manipulatePDF function to rotate the file so that it prints in a landscape format.
  * @param int counter - the number of items that have already been printed to a label; default is 1
@@ -813,8 +772,6 @@ private boolean findData(){
          
      }
  }
- 
- 
  /*
   * Function: resolveFileName
   * Purpose: Resolves the path for a file to be saved by the program. Also handles the auto
@@ -859,7 +816,7 @@ private boolean findData(){
  }
  
  /*
-  * Function: loadData
+  * Function: loadData (deprecated)
   * Purpose: loads the data from a selected .FILE_EXTENSION file or a .CSV file and populates the
   * application's serial numbers data table.
   * @param: String fileName - as the absolute path to the file that is to be loaded
@@ -1040,7 +997,7 @@ private boolean findData(){
   */
 private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_printLabel_btnActionPerformed
     try{
-        if(!findData()){
+        if(this.serialEntries.size() <= 0){
             //custom title, error icon
             JOptionPane.showMessageDialog(null,
                 "No barcodes to generate, don't waste a label!",
@@ -1400,10 +1357,7 @@ private void unitsPerCase_tfKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRS
  * @param: KeyEvent evt
  */
 private void unitsPerCase_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_unitsPerCase_tfKeyPressed
-   int keycode = evt.getKeyCode();
-    if(keycode == 10){
-      
-    }
+
 }//GEN-LAST:event_unitsPerCase_tfKeyPressed
 
 /*
@@ -1415,7 +1369,7 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
 }//GEN-LAST:event_unitsPerCase_tfMouseClicked
 
     private void serialEntry_tfActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serialEntry_tfActionPerformed
-        // TODO add your handling code here:
+
     }//GEN-LAST:event_serialEntry_tfActionPerformed
 
     private void serialAdd_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serialAdd_btnActionPerformed
@@ -1453,9 +1407,6 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
         int reply = JOptionPane.showConfirmDialog(null, "Are you sure you want to delete the entry?", "Confirm delete", JOptionPane.YES_NO_OPTION);
         if (reply == JOptionPane.YES_OPTION) {
           this.removeSerial(this.serialsTable.getSelectedRow());
-        }
-        else {
-          return;
         }
     }//GEN-LAST:event_serialsTableMouseClicked
 
@@ -1578,6 +1529,17 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
         this.serialCount_lbl_data.setText(""+this.serialCount);
         this.checkNewBox();
         
+    }
+    
+    /*
+     * Function: focusTf
+     * Purpose: sets the focus on the label title text field on window load and every time 
+     * new label is called and also repopulates the default 'hint' text
+     */
+    public void focusTf(){
+        this.label_title_tf.requestFocusInWindow();
+        this.label_title_tf.setText(HINT_TEXT);
+        this.label_title_tf.selectAll();
     }
     
 public static void main(String args[]) {
