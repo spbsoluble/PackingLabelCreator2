@@ -35,6 +35,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -47,11 +48,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractCellEditor;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 /*
@@ -74,6 +79,7 @@ public class GUI extends javax.swing.JFrame {
     private int boxCount = 1;
     GridBagConstraints constraints;
     ArrayList<String> serialEntries = new ArrayList<String>();
+    boolean dataSaved = true;
     
     /** Creates new form GUI */
     public GUI() {
@@ -119,13 +125,16 @@ public class GUI extends javax.swing.JFrame {
         print_menu_item = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Packing Label Creator");
+        setTitle("Packing Label Creator v2.0");
         setMaximumSize(new java.awt.Dimension(800, 600));
         setMinimumSize(new java.awt.Dimension(300, 600));
         setName("Hard drive packing label creator"); // NOI18N
         setPreferredSize(new java.awt.Dimension(800, 600));
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
             public void windowOpened(java.awt.event.WindowEvent evt) {
                 formWindowOpened(evt);
             }
@@ -332,6 +341,8 @@ public class GUI extends javax.swing.JFrame {
         boxCount_lbl_data.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
         boxCount_lbl_data.setText("0");
 
+        jScrollPane2.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
         serialsTable.setFont(new java.awt.Font("DialogInput", 1, 18)); // NOI18N
         serialsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -356,6 +367,7 @@ public class GUI extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        serialsTable.setAutoscrolls(false);
         serialsTable.setColumnSelectionAllowed(true);
         serialsTable.getTableHeader().setReorderingAllowed(false);
         serialsTable.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -393,14 +405,13 @@ public class GUI extends javax.swing.JFrame {
                         .addComponent(serialAdd_btn, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 341, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(39, Short.MAX_VALUE))
         );
         display_panelLayout.setVerticalGroup(
             display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(display_panelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(display_panelLayout.createSequentialGroup()
                         .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(serial_lbl)
@@ -414,8 +425,8 @@ public class GUI extends javax.swing.JFrame {
                         .addGroup(display_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel1)
                             .addComponent(boxCount_lbl_data))
-                        .addGap(0, 237, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .addContainerGap())
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 385, Short.MAX_VALUE)))
         );
 
         file_menu.setText("File");
@@ -744,10 +755,18 @@ private boolean findData(){
      SerialFileManager sfm = new SerialFileManager();
      sfm.addToRepoFile(hdInvoice);
      
+     BufferedWriter writer = null;
+     BufferedWriter csvWriter = null;
+             
      try{
-         
-        BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));   //writer object that writes to the FILE_EXTENSION file
-        BufferedWriter csvWriter = new BufferedWriter(new FileWriter(fileNameCSV)); //writer object that writes to the csv file
+         HardDriveInvoice hdi = this.createHdInvoice();
+         if(hdi != null){
+             writer = new BufferedWriter(new FileWriter(fileName));   //writer object that writes to the FILE_EXTENSION file
+             hdi.writeToFile(writer);
+             this.updateSavedState(true);
+         }
+        /*writer = new BufferedWriter(new FileWriter(fileName));   //writer object that writes to the FILE_EXTENSION file
+        csvWriter = new BufferedWriter(new FileWriter(fileNameCSV)); //writer object that writes to the csv file
         writer.write("title: " + label_title_tf.getText());                          //write label title to the file
         csvWriter.write("title: " + label_title_tf.getText());  
         csvWriter.write(",");                                                        //put a comma for the csv
@@ -762,9 +781,16 @@ private boolean findData(){
         
         writer.newLine();       //insert line break
         csvWriter.newLine();    
+        csvWriter.write("Serials:");
+        
+        for(int i = 0; i < this.serialEntries.size(); i++){
+            writer.write(this.serialEntries.get(i));
+            writer.newLine();
+            csvWriter.write(this.serialEntries.get(i)+",");
+        }
         
         //loop to cycle through the serial numbers table data
-       
+       */
      } catch (FileNotFoundException fnf) {  //filenotfound thrown when directory is missing
          //try and recreate directory structure
          if(createFileDirectory()){ //if successful then call this function again
@@ -773,8 +799,18 @@ private boolean findData(){
              System.out.println("Unable to create file");   //if failure then give up and don't save
              return;
          }
+         this.updateSavedState(false);
      } catch (IOException ioe) {    //thrown when writer objects
          System.out.println(ioe);
+         this.updateSavedState(false);
+     } finally {
+         try {
+             writer.close();
+             //csvWriter.close();
+         } catch (IOException ex) {
+             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+         }
+         
      }
  }
  
@@ -896,6 +932,79 @@ private boolean findData(){
         }
  }
  
+ private void updateInvoiceNumber(String invoiceNumber){
+     this.label_title_tf.setText(invoiceNumber.trim());
+ }
+ 
+ private void updateModel(String model){
+     this.model_number_tf.setText(model.trim());
+ }
+ 
+ private void updateSerialCount(String count){
+     this.serialCount_lbl_data.setText(count.trim());
+     //add catch for invalid number
+     this.serialCount = Integer.parseInt(count.trim());
+     this.checkNewBox();
+ }
+ 
+ private void loadLabel(String fileName){
+     boolean isLBL = false;
+     
+     if(fileName.contains(".lbl")){
+         BufferedReader br = null;
+         try {
+             isLBL = true;
+               br = new BufferedReader(new FileReader(fileName));
+              //first line is empty
+              if(br.readLine() != null){
+                 
+                //second line is Invoice: <invoice number>
+                  String readLine = "";
+                  readLine = br.readLine();
+                  String [] currentLine = readLine.split(":");
+                  //add catch for length of current line
+                  this.updateInvoiceNumber(currentLine[1]);
+                    //third line is Model: <model #>
+                  readLine = br.readLine();
+                  currentLine = readLine.split(":");
+                  this.updateModel(currentLine[1]);
+                  
+                  //fourth line is Date: MM/dd/yyyy HH:mm:ss
+                  readLine = br.readLine();
+                  
+                  
+                //fifth line is Qty: <qty>
+                  readLine = br.readLine();
+                  currentLine = readLine.split(":");
+                  this.updateSerialCount(currentLine[1]);
+                //fifth and beyond = entry#:serial
+                  while((readLine = br.readLine()) != null){
+                      currentLine = readLine.split(":");
+                      this.addSerial(currentLine[0], currentLine[1]);
+                  }
+              }
+         } catch (IOException ex) {
+             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+         } catch (ArrayIndexOutOfBoundsException aiobe){
+             System.err.println("Out of bounds on an array...bad stuff");
+         } finally {
+             try {
+                 br.close();
+             } catch (IOException ex) {
+                 System.err.println("Buffered reader failed to close");
+             }
+         }
+     } else {
+         System.err.println("Invalid label file!");
+           JOptionPane.showMessageDialog(null,
+                "Not a valid .lbl file.",
+                "Invalid file type error",
+                JOptionPane.ERROR_MESSAGE);
+     }
+     
+     
+ }
+ 
  /*
   * Function: createFileDirectory
   * Purpose: Generates the directory structure the application uses. Places a folder in the user's 'home'
@@ -937,12 +1046,14 @@ private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GE
                 "No barcodes to generate, don't waste a label!",
                 "No data error",
                 JOptionPane.ERROR_MESSAGE);
+                this.updateSavedState(true);
             return;
         } else if (this.label_title_tf.getText().equals(HINT_TEXT) || this.label_title_tf.getText().trim().equals("")){
              JOptionPane.showMessageDialog(null,
                 "Please title the label! \nFormat: Invoice, PO, Customer",
                 "Invalid Title",
                 JOptionPane.ERROR_MESSAGE);
+             this.updateSavedState(false);
             return;
         }
         /*
@@ -1078,7 +1189,7 @@ private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GE
         document.close();
         
         //save the data to .FILE_EXTENSION and .csv
-        saveDataText();
+        this.saveDataText();
         
         
         //open up adobe with the file you just made
@@ -1091,6 +1202,7 @@ private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GE
                     "Please close the PDF file before creating a new label!",
                     "File access error",
                     JOptionPane.ERROR_MESSAGE);
+                this.updateSavedState(true);
                 return;
             } catch (IOException ioe) {
                   JOptionPane.showMessageDialog(null,
@@ -1112,7 +1224,7 @@ private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GE
                 "Document error",
                 JOptionPane.ERROR_MESSAGE);
             return;
-    }
+    } 
 }//GEN-LAST:event_printLabel_btnActionPerformed
 
 /*
@@ -1140,6 +1252,7 @@ private void label_title_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:
         this.model_number_tf.requestFocusInWindow();
         this.model_number_tf.selectAll();
     }
+    this.updateSavedState(false);
 }//GEN-LAST:event_label_title_tfKeyPressed
 
 /*
@@ -1148,10 +1261,8 @@ private void label_title_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:
  * @param: ActionEvent evt
  */
 private void model_number_tfKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_model_number_tfKeyPressed
-  int keycode = evt.getKeyCode();
-  if(keycode == 10){
-       
-    }
+    int keycode = evt.getKeyCode();
+    this.updateSavedState(true);
 }//GEN-LAST:event_model_number_tfKeyPressed
 
 /*
@@ -1178,6 +1289,7 @@ private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event
         FileFilter filter = new ExtensionFileFilter(".lbl, .csv", new String [] {"LBL", "CSV"});
         jFileChooser1.setAcceptAllFileFilterUsed(false);
         jFileChooser1.setFileFilter(filter);
+        this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 }//GEN-LAST:event_formWindowOpened
 
 /*
@@ -1193,7 +1305,7 @@ private void open_menuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN
         String fileName = file.getName();
         String path = file.getAbsolutePath();
         System.out.println(path);
-        loadData(path);
+        loadLabel(path);
     }
 }//GEN-LAST:event_open_menuItemActionPerformed
 
@@ -1345,8 +1457,24 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
         else {
           return;
         }
-        
     }//GEN-LAST:event_serialsTableMouseClicked
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        System.out.println("Not closing maang");
+        if(!this.dataSaved){
+            int reply = JOptionPane.showConfirmDialog(null, "Exit without saving/printing your current label?", "Unsaved data warning.", JOptionPane.YES_NO_OPTION);
+            if (reply == JOptionPane.YES_OPTION) {
+                this.dispose();
+                System.exit(0);
+            }
+            else {
+                this.printLabel_btn.doClick();
+            }
+        } else {
+            this.dispose();
+            System.exit(0);
+        }
+    }//GEN-LAST:event_formWindowClosing
     
     private boolean checkNewBox(){
         this.boxCount_lbl_data.setText(""+(this.serialCount) / this.getUnitsPerBox());
@@ -1360,8 +1488,8 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
             Toolkit.getDefaultToolkit().beep();
             JOptionPane.showMessageDialog(null,
                 "You completed a box!",
-                "No data error",
-                JOptionPane.OK_OPTION);
+                "Box Complete",
+                JOptionPane.WARNING_MESSAGE);
         }
         return (this.serialCount - 1) % this.getUnitsPerBox() == 0;
     }
@@ -1407,12 +1535,17 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
         }
     }
     private boolean addSerial(){
+        this.updateSavedState(false);
         if(checkSerial()){       
             DefaultTableModel model = (DefaultTableModel) this.serialsTable.getModel();
             model.addRow(new Object[]{this.serialCount+1,this.getSerial()});
             this.serialEntries.add(this.getSerial());
             this.updateSerialCounter(1);
             this.serialEntry_tf.setText(null);
+            
+            //scroll table to bottom
+            this.serialsTable.scrollRectToVisible(this.serialsTable.getCellRect(this.serialsTable.getRowCount()-1, 0, true));
+            
             return true;
         } else {
              JOptionPane.showMessageDialog(null,
@@ -1422,6 +1555,22 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
              this.serialEntry_tf.setText(null);
              return false;
         }
+    }
+    
+    private void updateSavedState(boolean state){
+        this.dataSaved = state;
+    }
+    
+    private boolean addSerial(String position, String serial){
+            this.updateSavedState(false);
+            DefaultTableModel model = (DefaultTableModel) this.serialsTable.getModel();
+            model.addRow(new Object[]{Integer.parseInt(position),serial});
+            this.serialEntries.add(serial);
+            //this.updateSerialCounter(1);
+            this.serialEntry_tf.setText(null);
+            //scroll table to bottom
+            this.serialsTable.scrollRectToVisible(this.serialsTable.getCellRect(this.serialsTable.getRowCount()-1, 0, true));
+            return true;
     }
     
     public void updateSerialCounter(int update){

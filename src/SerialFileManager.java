@@ -92,7 +92,7 @@ public class SerialFileManager {
     
     public void addToRepoFile(HardDriveInvoice invoice){
          
-        SmbFileOutputStream os = null;
+        
         try {
             String entry = entryPrefix + invoice.toString() + entryPostfix;
              String storagePath = defaultPrefix + defaultNetworkUserName + ":" + 
@@ -105,8 +105,7 @@ public class SerialFileManager {
             invoice.writeToFile(bw);
             bw.close();
             fw.close();
-            
-            os.write(entry.getBytes());
+        
         } catch (SmbException ex) {
             Logger.getLogger(SerialFileManager.class.getName()).log(Level.SEVERE, null, ex);
         } catch (MalformedURLException ex) {
@@ -117,11 +116,7 @@ public class SerialFileManager {
                 Logger.getLogger(SerialFileManager.class.getName()).log(Level.SEVERE, null, ex);
         }
         finally {
-            try {
-                os.close();
-            } catch (IOException ex) {
-                Logger.getLogger(SerialFileManager.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            System.out.print("done");
         }
          
    }
