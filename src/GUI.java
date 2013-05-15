@@ -1,42 +1,14 @@
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Element;
-import com.itextpdf.text.Font;
-import com.itextpdf.text.Font.FontFamily;
-import com.itextpdf.text.Image;
-import com.itextpdf.text.PageSize;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.Barcode128;
-import com.itextpdf.text.pdf.Barcode39;
-import com.itextpdf.text.pdf.PdfAction;
-import com.itextpdf.text.pdf.PdfContentByte;
-import com.itextpdf.text.pdf.PdfDictionary;
-import com.itextpdf.text.pdf.PdfName;
-import com.itextpdf.text.pdf.PdfNumber;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfStamper;
-import com.itextpdf.text.pdf.PdfWriter;
-import java.awt.Desktop;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfReader;
-import java.awt.GridBagConstraints;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import javax.swing.filechooser.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -57,8 +29,8 @@ import javax.swing.table.DefaultTableModel;
 public class GUI extends javax.swing.JFrame {
     private static final int PACK_SIZE = 20;                //max number of elements that will fit on a label
     
-    private int labelSize = PACK_SIZE;                      //number of rows the label input table contains
-    private Stack longBarcodes = new Stack<Object>();       //*unused* intended for document rotation of long barcodes
+    
+    
     private static final String HINT_TEXT = "Invoice , PO, Customer";   //the 'hint' text that shows up on launch in the title field.
     private int serialCount = 0;
     ArrayList<String> serialEntries = new ArrayList<String>();
@@ -112,7 +84,6 @@ public class GUI extends javax.swing.JFrame {
         setMaximumSize(new java.awt.Dimension(800, 600));
         setMinimumSize(new java.awt.Dimension(300, 600));
         setName("Hard drive packing label creator"); // NOI18N
-        setPreferredSize(new java.awt.Dimension(800, 600));
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -490,197 +461,7 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
     this.updateSerialCounter(-this.serialCount);
 }//GEN-LAST:event_clear_btnActionPerformed
 
-/*
- * Function: manipulatePdf
- * Purpose: *unused* Rotates the pdf by 90 degrees after writing; intended for use with
- * long barcode handling.
- * @param: String src: the source pdf file to rotate
- * @param: String dest: the destination pdf file to save rotation.
- */
- public void manipulatePdf(String src, String dest) throws IOException, DocumentException {
-        PdfReader reader = new PdfReader(src);
-        int n = reader.getNumberOfPages();
-        int rot;
-        PdfDictionary pageDict;
-        for (int i = 1; i <= n; i++) {
-            rot = reader.getPageRotation(i);
-            pageDict = reader.getPageN(i);
-            pageDict.put(PdfName.ROTATE, new PdfNumber(rot + 90));
-        }
-        PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(dest));
-        stamper.close();
- }
-
- /*
-  * Function: scaleBarcode
-  * Purpose: creates a barcode image given a string. The image is scaled if the string length
-  * is longer than 17 characters; which seems to be the max number of characters that fit on a 
-  * 4x6 label.
-  * @param: String code: the string you want to convert to a barcode image
-  * @param: PdfWriter writer: reference to a writer which is needed to created the image
-  * @returns: itext.text.Image image of the barcode
-  */
- public com.itextpdf.text.Image scaleBarcode(String code, PdfWriter writer){
-    Barcode39 code39 = new Barcode39();
-    code39.setSize(6f);     //sets font size of text below the barcode
-    code39.setBarHeight(8); //sets the height of the bars for the barcode
-    code39.setX(1);         //sets the min width of the bars
-    
-    code39.setCode(code);   //binds the input string to the Barcode39 object's code
-    PdfContentByte cb = writer.getDirectContent();  //required to create the image
-    com.itextpdf.text.Image tehImage = code39.createImageWithBarcode(cb, null, null); //itext Image object of the barcode
-    
-    //image scaling logic; limited to 17 characters unscaled by 4x6. 37 characters max scalable 
-    if(code.length() > 17){
-        tehImage.scaleAbsoluteWidth(270);
-    }
-    return tehImage;
- }
- 
- /*
-  * Function: initTable
-  * Purpose: Initializes the pdf table that holds the serial numbers. Is called for each 'page' 
-  * of the pdf.
-  * @param: int size - the number of columns in the table
-  * @returns: PdfPTable with the given number of columns and column widths
-  */
- public PdfPTable initTable(int size){
-        PdfPTable table = new PdfPTable(size);  //creates table object and sets number of columns
-       
-        float dims [] = new float [2];          //the array to hold the column widths
-        dims[0] = .2f;                          //hard coded first column width; item number
-        dims[1] = 4f;                           //hard coded barcode column width
-        table = new PdfPTable(dims);            //creates the table with the new column widths
-        table.setWidthPercentage(100);          //sets the width of the table to the width of the page
-        return table;
- }
-  
-  /*
-  * Function: addHeader
-  * Purpose: Adds the header of the label that contains label title, model number, and the case number.
-  * @param: Document document - reference to the current document being written to.
-  * @param: PdfWriter writer - reference to the current writer writing to the pdf.
-  * @param: int caseNumber - the current 'box' the label is on
-  * @param: int numberOfCases - the max number of 'boxes' 
-  */
-  public void addHeader(Document document, PdfWriter writer, int caseNumber, int numberOfCases) throws DocumentException{
-        String title1 = this.label_title_tf.getText().toUpperCase();        //sends to uppercase in case conversion to barcode is needed
-        String headerNumber = this.model_number_tf.getText().toUpperCase();
-        
-        //label title object
-        Paragraph labelTitle;
-          
-        //scaling logic for the title to prevent wrapping and offsetting the number of elements on a label
-        if(title1.length() < 32)
-             labelTitle= new Paragraph(title1,new Font(FontFamily.COURIER,15));
-        else if (title1.length() < 39){
-            labelTitle= new Paragraph(title1,new Font(FontFamily.COURIER,12));
-        } else if(title1.length() < 59) {
-            labelTitle= new Paragraph(title1,new Font(FontFamily.COURIER,8));
-        } else {
-            labelTitle= new Paragraph(title1,new Font(FontFamily.COURIER,5));
-        }
-        
-        //table object holding the title to hold the barcode
-        PdfPTable titleTable = new PdfPTable(1);
-        
-        //sets table to the width of the page
-        titleTable.setWidthPercentage(100f);
-        
-        labelTitle.setAlignment(Element.ALIGN_CENTER);
-        
-        //adds the label title to the document object
-        document.add(labelTitle);
-        
-        //table object that holds header and case text
-        PdfPTable table = new PdfPTable(new float[] {5f, 2f});
-        table.setWidthPercentage(100);
-        PdfPCell cell = new PdfPCell();
-        
-        //Label Header Number
-        Paragraph labelHeaderNumber = new Paragraph(headerNumber,new Font(FontFamily.HELVETICA,12));
-        labelHeaderNumber.setAlignment(Element.ALIGN_LEFT);
-        cell = new PdfPCell(labelHeaderNumber);
-    
-        cell.setBorder(0);  //remove cell border
-        table.addCell(cell);//adds the title cell to the table object
-        
-        //object to hold current box of max boxes text
-         Paragraph caseNumberLabel = new Paragraph("Box: " + caseNumber + " of " + numberOfCases,new Font(FontFamily.HELVETICA,12));
-         
-         //set text alignment to the right of the cell
-         caseNumberLabel.setAlignment(Element.ALIGN_RIGHT);
-         
-         //puts the object text into a PdfPCell object
-         cell = new PdfPCell(caseNumberLabel);
-         cell.setBorder(0); //remove cell border
-         table.addCell(cell);   //add the cell to the table object
-        
-        document.add(table);    //add table to the document 
-        
-        //paragraph object that holds 'Serial Numbers' label for the table
-        Paragraph serials = new Paragraph("      Serial Numbers:", new Font(FontFamily.HELVETICA,8));
-        
-        //adds serial numbers label to the document
-        document.add(serials);
-    }
-
-  /*
- * Function: generateLongPDF(deprecated)
- * Purpose: *unused* Generates a pdf file that interchanges the height and width dimensions and then
- * calls the manipulatePDF function to rotate the file so that it prints in a landscape format.
- * @param int counter - the number of items that have already been printed to a label; default is 1
- */
- private void generateLongPDF(int counter){
-     if(!(longBarcodes.size() <= 0)){
-         try{
-            Rectangle pageSize = new Rectangle(600,400);
-            Document document = new Document(pageSize, 7.5f, 7.5f,0f,0f);
-            // step 2
-            PdfWriter writer;
-            writer = PdfWriter.getInstance(document, new FileOutputStream("packingListLong.pdf"));
-            
-            document.open();
-            
-            PdfContentByte cb = writer.getDirectContent();
-            document.add(new Paragraph("Hi"));
-            //add title and header
-            //addHeader(document,0,1);
-        
-            //set data table
-            PdfPTable table = initTable(3);
-
-
-            PdfPCell cell = new PdfPCell();
-            cell.setFixedHeight(1f);
-            cell.setPaddingTop(1f);
-            
-            for(int i = 0; i < longBarcodes.size(); i++, counter++){
-                //add count
-                cell = new PdfPCell(new Paragraph(""+counter, new Font(Font.FontFamily.HELVETICA, 6)));
-                cell.setBorder(0);
-                cell.setPaddingTop(1f);
-                //cell.setPaddingBottom(6f);
-                table.addCell(cell);
-                
-                //add barcode
-                cell = new PdfPCell((Image)longBarcodes.pop());
-                cell.setBorder(0);
-                cell.setPaddingTop(1f);
-                //cell.setPaddingBottom(0f);
-                table.addCell(cell);
-            }
-            document.add(table);
-            document.close();
-         } catch (DocumentException de) {
-             System.out.println(de);
-         } catch (FileNotFoundException fnf) {
-             System.out.println(fnf);
-         }
-     }
- }
- 
- public HardDriveInvoice createHdInvoice(){
+public HardDriveInvoice createHdInvoice(){
      String invoiceNumber = this.getInvoiceNumber();
      String model = this.getModel();
      Date date = new Date();
@@ -701,194 +482,6 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
      return this.model_number_tf.getText();
  }
  
- /*
-  * Function: saveDataText
-  * Purpose: Saves the label data to a text file using the FILE_EXTENSION and as a csv file
-  */
- private void saveDataText(){
-     String fileName;       //stores FILE_EXTENSION name
-     String fileNameCSV;    //stores CSV name
-     fileName = resolveFileName(FILE_EXTENSION);    //resolves the path to the FILE_EXTENSION file
-     fileNameCSV = resolveFileName(".csv");         //resolves the path to the csv file
-     HardDriveInvoice hdInvoice = this.createHdInvoice();
-     SerialFileManager sfm = new SerialFileManager();
-     sfm.addToRepoFile(hdInvoice);
-     
-     BufferedWriter writer = null;
-     BufferedWriter csvWriter = null;
-             
-     try{
-         HardDriveInvoice hdi = this.createHdInvoice();
-         if(hdi != null){
-             writer = new BufferedWriter(new FileWriter(fileName));   //writer object that writes to the FILE_EXTENSION file
-             hdi.writeToFile(writer);
-             this.updateSavedState(true);
-         }
-        /*writer = new BufferedWriter(new FileWriter(fileName));   //writer object that writes to the FILE_EXTENSION file
-        csvWriter = new BufferedWriter(new FileWriter(fileNameCSV)); //writer object that writes to the csv file
-        writer.write("title: " + label_title_tf.getText());                          //write label title to the file
-        csvWriter.write("title: " + label_title_tf.getText());  
-        csvWriter.write(",");                                                        //put a comma for the csv
-        
-        writer.newLine();                                       //insert line break
-        csvWriter.newLine();
-        
-        writer.write("header: " + model_number_tf.getText());  //write header/modelnumber to the file
-        csvWriter.write("header: " + model_number_tf.getText());
-        
-        csvWriter.write(",");   //put comma for the csv
-        
-        writer.newLine();       //insert line break
-        csvWriter.newLine();    
-        csvWriter.write("Serials:");
-        
-        for(int i = 0; i < this.serialEntries.size(); i++){
-            writer.write(this.serialEntries.get(i));
-            writer.newLine();
-            csvWriter.write(this.serialEntries.get(i)+",");
-        }
-        
-        //loop to cycle through the serial numbers table data
-       */
-     } catch (FileNotFoundException fnf) {  //filenotfound thrown when directory is missing
-         //try and recreate directory structure
-         if(createFileDirectory()){ //if successful then call this function again
-             saveDataText();
-         } else {
-             System.out.println("Unable to create file");   //if failure then give up and don't save
-             return;
-         }
-         this.updateSavedState(false);
-     } catch (IOException ioe) {    //thrown when writer objects
-         System.out.println(ioe);
-         this.updateSavedState(false);
-     } finally {
-         try {
-             writer.close();
-             //csvWriter.close();
-         } catch (IOException ex) {
-             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-         }
-         
-     }
- }
- /*
-  * Function: resolveFileName
-  * Purpose: Resolves the path for a file to be saved by the program. Also handles the auto
-  * filename incrementing.
-  * @param: String fileType - the type of file that is being saved {PDF,LBL,CSV}
-  * @returns: String fileName - the name as the absolute path to the file
-  */
- private String resolveFileName(String fileType){
-     String fileName;   //holds file name
-     File dataFile;     //file object to test if file exists
-     String location;   //location of the file
-     String title = this.label_title_tf.getText();  //title of the file
-     
-     //if no file name provided then use 'untitled'
-     if(title.trim() == null || title.trim().equals("")){
-         title = "untitled";
-     }
-     
-     //Block to determine where to save the file based on file extension
-     if(fileType == ".pdf"){
-         location = System.getProperty("user.home")+"\\Documents\\PackingLabels\\";
-     } else if (fileType == ".lbl") {
-         location = System.getProperty("user.home")+"\\Documents\\PackingLabels\\LabelFiles\\";
-     } else if (fileType == ".csv"){
-         location = System.getProperty("user.home")+"\\Documents\\PackingLabels\\LabelFiles\\csvs\\";
-     } else {
-         location = System.getProperty("user.home")+"\\Documents\\PackingLabels\\LabelFiles\\";
-     }
-     
-     
-     int i = 0; //file name increment counter
-     do{        //loop until you have a unique file name
-         if(i == 0){
-             fileName = location + (title+fileType).trim();
-         } else {
-             fileName = location + (title + "["+i+"]"+fileType).trim();
-         }
-         dataFile = new File(fileName);
-         i++;
-     } while(dataFile.exists());    
-     return fileName;
- }
- 
- /*
-  * Function: loadData (deprecated)
-  * Purpose: loads the data from a selected .FILE_EXTENSION file or a .CSV file and populates the
-  * application's serial numbers data table.
-  * @param: String fileName - as the absolute path to the file that is to be loaded
-  */
- private void loadData(String fileName){
-        try {
-            boolean isCSV = false;  //boolean value for checking if the file being read is a csv
-            
-            //check if the file is a .csv file if it is then set isCSV true
-            if(fileName.contains(".csv"))
-                isCSV = true;
-            
-            //Reader object that connects to the file to be loaded
-            BufferedReader reader = new BufferedReader(new FileReader(fileName));
-            
-            String currentLine = reader.readLine(); //current line of the file being read
-            
-            int rowCount = 0;   //determines which row the data is going to populate
-            while(currentLine != null) {    //loop through the file until you find no data
-                
-                //if you're at the max number of rows in the table, increment
-                if(rowCount >= labelSize){
-                    ;//increaseTableSize();
-                }
-                
-                //if the current line contains 'title:' then it must be the title of the label
-                if(currentLine.contains("title:")){
-                    //parse the 'title:' from the line
-                    String [] temp = currentLine.split(":");
-                    
-                    if(temp.length > 1){                       //if there's anything left after splitting then that's your title
-                        String text = temp[1].trim();          //trim any whitespace from the title
-                        if(isCSV){                             //if it's a csv file then remove the comma at the end
-                            text = text.substring(0, text.length()-1);
-                        }
-                                                              //finally set the label title field text to what was parsed
-                        this.label_title_tf.setText(text);
-                    }
-                } else if (currentLine.contains("header:")) { //else if it contains 'header:' then it must be the header/model number
-                    //parse the 'header:' from the line
-                    String [] temp = currentLine.split(":");    
-                    
-                    if(temp.length > 1){                    //if there's anything left after splitting then that's your header/modelnumber
-                        String text = temp[1].trim();       //trim any whitespace
-                        if(isCSV){                          //if it's a csv file then remove the comma at the end
-                             text = text.substring(0, text.length()-1);
-                        }
-                        
-                        //finally set the label title field text to what was parsed
-                        this.model_number_tf.setText(text);
-                    }
-                } else {                                                    //else it must be a serial number line
-                    String text = currentLine.trim();                       //trim the whitespace
-                    if(isCSV){                                              //if it's a csv remove the comma at the end
-                        text = text.substring(0, text.length()-1);
-                    }
-                    
-                    rowCount++;                                             //increment the row count
-                }
-                currentLine = reader.readLine();
-            }
-            //check once more to see if more lines need be added to the input table
-            if(rowCount >= labelSize){
-                ;//increaseTableSize();
-            }
-        } catch (FileNotFoundException fnf) { //should never be thrown, but will occur if loading file disappears
-            return;
-        } catch (IOException ioe) { //thrown when the reader breaks
-            return;
-        }
- }
- 
  private void updateInvoiceNumber(String invoiceNumber){
      this.label_title_tf.setText(invoiceNumber.trim());
  }
@@ -905,12 +498,9 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
  }
  
  private void loadLabel(String fileName){
-     boolean isLBL = false;
-     
      if(fileName.contains(".lbl")){
          BufferedReader br = null;
          try {
-             isLBL = true;
                br = new BufferedReader(new FileReader(fileName));
               //first line is empty
               if(br.readLine() != null){
@@ -976,18 +566,7 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
      return (new File(System.getProperty("user.home")+"\\Documents\\PackingLabels\\LabelFiles\\csvs")).mkdirs();
  }
  
- /*
-  * Function: getTableSize
-  * Purpose: Returns the number of data elements in the table, as rowCount simply returns the number of 
-  * rows the serial numbers table object contains regardless of if they're populated or not.
-  * @returns: int dataCount - the amount of non-null/empty data it found. 
-  */
- private int getTableSize(){
-     int dataCount = 0;
-     
-     return dataCount;
- }
- 
+
  /*
   * Function: printLabel_btnActionPerformed
   * Purpose: Main save and print logic for the program. When the button is pressed the program checks
@@ -996,192 +575,8 @@ private void clear_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
   * those two conditions are met then it starts creating the PDF file
   */
 private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_printLabel_btnActionPerformed
-    try{
-        if(this.serialEntries.size() <= 0){
-            //custom title, error icon
-            JOptionPane.showMessageDialog(null,
-                "No barcodes to generate, don't waste a label!",
-                "No data error",
-                JOptionPane.ERROR_MESSAGE);
-                this.updateSavedState(true);
-            return;
-        } else if (this.label_title_tf.getText().equals(HINT_TEXT) || this.label_title_tf.getText().trim().equals("")){
-             JOptionPane.showMessageDialog(null,
-                "Please title the label! \nFormat: Invoice, PO, Customer",
-                "Invalid Title",
-                JOptionPane.ERROR_MESSAGE);
-             this.updateSavedState(false);
-            return;
-        }
-        /*
-         * step 1
-         * Create document and set the page size. A6 is the closest thing to 4x6
-         */
-         
-        Document document = new Document(PageSize.A6, 7.5f, 7.5f,0f,0f);
-        /*
-         * step 2
-         * Create writer object and create the actual PDF file.
-         */
-        PdfWriter writer;
-        String fileName = resolveFileName(".pdf");
-        try{
-            writer = PdfWriter.getInstance(document, new FileOutputStream(fileName));
-        } catch (FileNotFoundException fnf) {
-           boolean success = createFileDirectory();
-            if (success) {
-              writer = PdfWriter.getInstance(document, new FileOutputStream(fileName));
-            } else {
-                System.err.println("Unable to make directory");
-                return;
-            }
-        }
-      
-        /*
-         * step 3
-         * Open the document by opening that actual PDF file
-         */
-        document.open();
-        
-        /*
-         * step 4
-         * Initialize table and barcode objects as well as other variables to be used
-         */
-        PdfContentByte cb = writer.getDirectContent();      //needed to convert a barcode to an image
-        
-        int caseNumber = 1;     //the current box number for the label; defaults to 1
-        int numberOfCases = 1;  //the max number of boxes; defaults to 1
-       
-        
-        
-        PdfPTable table = initTable(3);     //init pdf table 
-        
-        PdfPCell cell = new PdfPCell();     //initalize cell object to dump the cell objects into
-        cell.setFixedHeight(1f);            //set the max height of a cell table cell element
-        cell.setPaddingTop(1f);             //set the padding at the top of the cell to help with spacing
-        
-        
-        Barcode128 code128 = new Barcode128(); //init barcode object 
-        code128.setSize(6f);                 //set barcode text size
-        code128.setBarHeight(8);             //set the height of the bars
-        code128.setX(.5f);                   //set the width of the bars
-        int counter = 1;
-        
-        Integer unitsPerLabel;              //number of units to go on each label; physical limit is 20
-        
-        //try and parse the value out of the units per case field
-        try{
-             unitsPerLabel = Integer.parseInt(this.unitsPerCase_tf.getText());
-             int test = unitsPerLabel + 1;
-        } catch (Exception e){  //if an int couldn't be parsed then default unitsPerLabel to PACK_SIZE
-            unitsPerLabel = PACK_SIZE;
-        }
-        
-        //determine the number of boxes based on the number of serial numbers scanned in and units per box
-        numberOfCases = (int)Math.ceil((float)getTableSize() / unitsPerLabel);
-        if(numberOfCases <= 0){
-            numberOfCases = 1;
-        }
-        
-        
-        addHeader(document, writer, caseNumber, numberOfCases); //add title and header to the document
-        
-        for(int i = 0; i < this.serialsTable.getRowCount(); i ++, counter++){
-            try{
-                Object obj_value = this.serialsTable.getValueAt(i, 1); //get the value of the current table row
-                String value = obj_value.toString();                          //convert value to string
-                
-                //if for whatever reason the value is null or empty do nothing, decrement the counter and continue to the next row
-                if(value == null || value.trim().equals("")){
-                    counter--;
-                    continue;
-                } else {
-                    boolean atLabelCapacity = (i % PACK_SIZE == 0 && i != 0);   //check to see if you're at the max units per label
-                    boolean atBoxCapacity = (i % unitsPerLabel == 0 && i != 0); //check to see if you're at max units for a box
-                    if(atBoxCapacity || atLabelCapacity) {                      //if you're at capacity you're going to need to make a newlabel
-                        if((atLabelCapacity && atBoxCapacity) || atBoxCapacity){ //if you're at both capacities then increment case number
-                                                                                 //of if you're just at box capacity increment case number
-                            caseNumber++;
-                        } 
-                        document.add(table);                                    //add the current table to the document
-                        document.newPage();                                     //create a new page
-                        addHeader(document, writer, caseNumber, numberOfCases); //add header to the new page
-                        table = initTable(3);                                   //initialize a new table object
-                    }
-                    
-                    //create cell to hold current item number/iteration/count
-                    cell = new PdfPCell(new Paragraph(""+counter, new Font(Font.FontFamily.HELVETICA, 6)));
-                    cell.setBorder(0);              //remove cell border
-                    cell.setPaddingTop(1f);         //pad the top of the cell a little for spacing
-                    table.addCell(cell);            //add the cell to table
-                    
-                    code128.setCode(value.toUpperCase());    //set barcode code
-                    
-                    
-                    if(value.length() > 40){            //if you're over 40 chars adjust the scale a bit
-                        code128.setX(.4f);
-                    }
-                    
-                    //create barcode image
-                    com.itextpdf.text.Image tehImage = code128.createImageWithBarcode(cb, null, null); 
-                    
-                    cell = new PdfPCell(tehImage);  //add image data to cell object
-                    cell.setBorder(0);              //remove cell border
-                    cell.setPaddingTop(1f);         //set the top padding for spacing
-                    table.addCell(cell);            //add the cell to the table
-                }
-            } catch(Exception e) {  //catch any exceptions and just press forward
-                continue;
-            }
-        }
-        
-        
-        document.add(table);  //finally add table to the document
-        
-        writer.setOpenAction(new PdfAction(PdfAction.PRINTDIALOG)); //make it so print dialog opens when pdf opens
-        /*
-         * step 5
-         * Close the document
-         */
-        document.close();
-        
-        //save the data to .FILE_EXTENSION and .csv
-        this.saveDataText();
-        
-        
-        //open up adobe with the file you just made
-        if (Desktop.isDesktopSupported()) {
-            try {
-                File myFile = new File(fileName);
-                Desktop.getDesktop().open(myFile);
-            } catch (FileNotFoundException fnf){
-                JOptionPane.showMessageDialog(null,
-                    "Please close the PDF file before creating a new label!",
-                    "File access error",
-                    JOptionPane.ERROR_MESSAGE);
-                this.updateSavedState(true);
-                return;
-            } catch (IOException ioe) {
-                  JOptionPane.showMessageDialog(null,
-                    "Error generating PDF file, please restart program and try again.",
-                    "IO Error",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            } 
-        }
-    } catch (FileNotFoundException fnf){
-                JOptionPane.showMessageDialog(null,
-                "Please close the PDF file before creating a new label!",
-                "File access error",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-    } catch (DocumentException de) {
-            JOptionPane.showMessageDialog(null,
-                "There was a problem generating the label, please create a new label and try again.",
-                "Document error",
-                JOptionPane.ERROR_MESSAGE);
-            return;
-    } 
+    PDFLabel label = new PDFLabel(this.createHdInvoice());
+    label.generatePDFLabel();
 }//GEN-LAST:event_printLabel_btnActionPerformed
 
 /*

@@ -26,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -41,11 +42,30 @@ import javax.swing.JOptionPane;
  */
 public class PDFLabel {
     
-    private HardDriveInvoice invoice;
+    
     private static final String FILE_EXTENSION = ".lbl";    //default file extension for the data save files
+    private String hintText = "";
+    private HardDriveInvoice invoice;
+    private ArrayList<String> serials;
+    private String invoiceNumber;
+    private String model;
+    private int unitsPerCase = 20;
+    private int PACK_SIZE = 20;
     
     public PDFLabel(HardDriveInvoice hdi){
         this.invoice = hdi;
+        this.invoiceNumber = hdi.getInvoiceNumber();
+        this.model = hdi.getModel();
+        this.serials = hdi.getSerials();
+    }
+    
+    public PDFLabel(HardDriveInvoice hdi, String hintText, int unitsPerCase){
+        this.invoice = hdi;
+        this.hintText = hintText;
+        this.invoiceNumber = hdi.getInvoiceNumber();
+        this.unitsPerCase = unitsPerCase;
+        this.model = hdi.getModel();
+        this.serials = hdi.getSerials();
     }
     
      /*
@@ -116,7 +136,7 @@ public class PDFLabel {
                     JOptionPane.ERROR_MESSAGE);
                     //this.updateSavedState(true);
                 return;
-            } else if (this.invoice.getInvoiceNumber().equals(HINT_TEXT) || this.label_title_tf.getText().trim().equals("")){
+            } else if (this.invoice.getInvoiceNumber().equals(this.hintText) || this.invoiceNumber.trim().equals("")){
                  JOptionPane.showMessageDialog(null,
                     "Please title the label! \nFormat: Invoice, PO, Customer",
                     "Invalid Title",
@@ -176,18 +196,8 @@ public class PDFLabel {
             code128.setX(.5f);                   //set the width of the bars
             int counter = 1;
 
-            Integer unitsPerLabel;              //number of units to go on each label; physical limit is 20
-
-            //try and parse the value out of the units per case field
-            try{
-                 unitsPerLabel = Integer.parseInt(this.unitsPerCase_tf.getText());
-                 int test = unitsPerLabel + 1;
-            } catch (Exception e){  //if an int couldn't be parsed then default unitsPerLabel to PACK_SIZE
-                unitsPerLabel = PACK_SIZE;
-            }
-
             //determine the number of boxes based on the number of serial numbers scanned in and units per box
-            numberOfCases = (int)Math.ceil((float)getTableSize() / unitsPerLabel);
+            numberOfCases = (int)Math.ceil((float)this.invoice.getHdQuantity() / unitsPerCase);
             if(numberOfCases <= 0){
                 numberOfCases = 1;
             }
@@ -195,10 +205,10 @@ public class PDFLabel {
 
             addHeader(document, writer, caseNumber, numberOfCases); //add title and header to the document
 
-            for(int i = 0; i < this.serialsTable.getRowCount(); i ++, counter++){
+            for(int i = 0; i < this.invoice.getHdQuantity(); i ++, counter++){
                 try{
-                    Object obj_value = this.serialsTable.getValueAt(i, 1); //get the value of the current table row
-                    String value = obj_value.toString();                          //convert value to string
+                    
+                    String value = this.serials.get(i);                          //convert value to string
 
                     //if for whatever reason the value is null or empty do nothing, decrement the counter and continue to the next row
                     if(value == null || value.trim().equals("")){
@@ -206,10 +216,9 @@ public class PDFLabel {
                         continue;
                     } else {
                         boolean atLabelCapacity = (i % PACK_SIZE == 0 && i != 0);   //check to see if you're at the max units per label
-                        boolean atBoxCapacity = (i % unitsPerLabel == 0 && i != 0); //check to see if you're at max units for a box
+                        boolean atBoxCapacity = (i % unitsPerCase == 0 && i != 0); //check to see if you're at max units for a box
                         if(atBoxCapacity || atLabelCapacity) {                      //if you're at capacity you're going to need to make a newlabel
-                            if((atLabelCapacity && atBoxCapacity) || atBoxCapacity){ //if you're at both capacities then increment case number
-                                                                                     //of if you're just at box capacity increment case number
+                            if((atLabelCapacity && atBoxCapacity) || atBoxCapacity){ //if you're at both capacities then increment case number                                              //of if you're just at box capacity increment case number
                                 caseNumber++;
                             } 
                             document.add(table);                                    //add the current table to the document
@@ -225,7 +234,6 @@ public class PDFLabel {
                         table.addCell(cell);            //add the cell to table
 
                         code128.setCode(value.toUpperCase());    //set barcode code
-
 
                         if(value.length() > 40){            //if you're over 40 chars adjust the scale a bit
                             code128.setX(.4f);
