@@ -51,6 +51,7 @@ public class PDFLabel {
     private String model;
     private int unitsPerCase = 20;
     private int PACK_SIZE = 20;
+    private String currentFileName = "";
     
     public PDFLabel(HardDriveInvoice hdi){
         this.invoice = hdi;
@@ -66,6 +67,10 @@ public class PDFLabel {
         this.unitsPerCase = unitsPerCase;
         this.model = hdi.getModel();
         this.serials = hdi.getSerials();
+    }
+    
+    public void getFileName(){
+        
     }
     
      /*
@@ -126,7 +131,7 @@ public class PDFLabel {
      }
  }
     
-    public void generatePDFLabel(){
+    public void generatePDFLabel(boolean print){
         try{
             if(this.invoice.getSerials().size() <= 0){
                 //custom title, error icon
@@ -267,7 +272,7 @@ public class PDFLabel {
 
 
             //open up adobe with the file you just made
-            if (Desktop.isDesktopSupported()) {
+            if (print && Desktop.isDesktopSupported()) {
                 try {
                     File myFile = new File(fileName);
                     Desktop.getDesktop().open(myFile);
@@ -340,9 +345,13 @@ public class PDFLabel {
          dataFile = new File(fileName);
          i++;
      } while(dataFile.exists());    
+     this.setCurrentFileName(fileName);
      return fileName;
  }
     
+ private void setCurrentFileName(String fileName){
+     this.currentFileName = fileName;
+ }
  /*
  * Function: manipulatePdf
  * Purpose: *unused* Rotates the pdf by 90 degrees after writing; intended for use with

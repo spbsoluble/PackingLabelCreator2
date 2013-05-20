@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
@@ -28,13 +30,12 @@ import javax.swing.table.DefaultTableModel;
  
 public class GUI extends javax.swing.JFrame {
     private static final int PACK_SIZE = 20;                //max number of elements that will fit on a label
-    
-    
-    
     private static final String HINT_TEXT = "Invoice , PO, Customer";   //the 'hint' text that shows up on launch in the title field.
     private int serialCount = 0;
     ArrayList<String> serialEntries = new ArrayList<String>();
     boolean dataSaved = true;
+    PDFLabel pdfLabel = null;
+    HardDriveInvoice hdi = null;
     
     /** Creates new form GUI */
     public GUI() {
@@ -63,6 +64,7 @@ public class GUI extends javax.swing.JFrame {
         printLabel_btn = new javax.swing.JButton();
         newLabel_btn = new javax.swing.JButton();
         open_btn = new javax.swing.JButton();
+        email_btn = new javax.swing.JButton();
         display_panel = new javax.swing.JPanel();
         serial_lbl = new javax.swing.JLabel();
         serialEntry_tf = new javax.swing.JTextField();
@@ -227,6 +229,13 @@ public class GUI extends javax.swing.JFrame {
             }
         });
 
+        email_btn.setText("Email");
+        email_btn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                email_btnActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout footer_panelLayout = new javax.swing.GroupLayout(footer_panel);
         footer_panel.setLayout(footer_panelLayout);
         footer_panelLayout.setHorizontalGroup(
@@ -239,17 +248,20 @@ public class GUI extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(clear_btn)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(email_btn, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(printLabel_btn)
                 .addContainerGap())
         );
         footer_panelLayout.setVerticalGroup(
             footer_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(footer_panelLayout.createSequentialGroup()
-                .addGroup(footer_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(printLabel_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(clear_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(newLabel_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(open_btn, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(footer_panelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addComponent(email_btn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(printLabel_btn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(clear_btn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(newLabel_btn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(open_btn, javax.swing.GroupLayout.DEFAULT_SIZE, 34, Short.MAX_VALUE))
                 .addGap(0, 2, Short.MAX_VALUE))
         );
 
@@ -575,8 +587,9 @@ public HardDriveInvoice createHdInvoice(){
   * those two conditions are met then it starts creating the PDF file
   */
 private void printLabel_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_printLabel_btnActionPerformed
-    PDFLabel label = new PDFLabel(this.createHdInvoice());
-    label.generatePDFLabel();
+    this.generateInvoiceFiles();
+    this.pdfLabel.generatePDFLabel(true);
+    this.updateSavedState(true);
 }//GEN-LAST:event_printLabel_btnActionPerformed
 
 /*
@@ -821,6 +834,47 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
             System.exit(0);
         }
     }//GEN-LAST:event_formWindowClosing
+
+    public void generateInvoiceFiles(){
+        this.hdi = this.createHdInvoice();
+        this.pdfLabel = new PDFLabel(this.createHdInvoice());
+    }
+    
+    private void email_btnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_email_btnActionPerformed
+            this.generateInvoiceFiles();
+            this.pdfLabel.generatePDFLabel(false);
+            this.updateSavedState(true);
+        
+        String emailAddress = (String)JOptionPane.showInputDialog(
+                    this,
+                    "Enter the email address you wish to send the invoice to.",
+                    "Email to",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    null,
+                    "email@unixsurplus.com");
+       EmailValidator ev = new EmailValidator();
+       if(!ev.validate(emailAddress)){
+           JOptionPane.showMessageDialog(this,
+                   "The email address you entered is not valid, please re-enter and try again.",
+                    "Invalid email address error",
+                    JOptionPane.ERROR_MESSAGE);
+           return;
+       }
+        
+        String[] file = new String[2];
+        file[0] = System.getProperty("user.home")+"\\Documents\\PackingLabels\\LabelFiles\\"+this.getInvoiceNumber()+".lbl";
+        file[1] = System.getProperty("user.home")+"\\Documents\\PackingLabels\\"+this.getInvoiceNumber()+".pdf";
+        SendMailTLS smtls = new SendMailTLS(emailAddress,this.getInvoiceNumber(),file, this.hdi);
+    }//GEN-LAST:event_email_btnActionPerformed
+    
+    private boolean checkDuplicate(){
+        if(this.serialEntries.contains(this.getSerial())){
+            return true;
+        } else {
+            return false;
+        }
+    }
     
     private boolean checkNewBox(){
         this.boxCount_lbl_data.setText(""+(this.serialCount) / this.getUnitsPerBox());
@@ -874,7 +928,7 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
     }
     
     public boolean checkSerial(){
-        if(this.getSerial() == null || this.getSerial().trim().equals("")){
+        if((this.getSerial() == null || this.getSerial().trim().equals("")) || this.checkDuplicate()){
             return false;
         } else {
             return true;
@@ -894,10 +948,20 @@ private void unitsPerCase_tfMouseClicked(java.awt.event.MouseEvent evt) {//GEN-F
             
             return true;
         } else {
-             JOptionPane.showMessageDialog(null,
+            if(this.checkDuplicate()){
+                Toolkit.getDefaultToolkit().beep();
+                JOptionPane.showMessageDialog(null,
+                "You've already scanned that serial number!",
+                "Duplicate Serial Error",
+                JOptionPane.ERROR_MESSAGE);
+                
+            } else {
+                Toolkit.getDefaultToolkit().beep();
+                JOptionPane.showMessageDialog(null,
                 "No serial number entered. Please enter a serial number!",
                 "No data error",
                 JOptionPane.ERROR_MESSAGE);
+            }
              this.serialEntry_tf.setText(null);
              return false;
         }
@@ -986,6 +1050,7 @@ public static void main(String args[]) {
     private javax.swing.JButton clear_btn;
     private javax.swing.JLabel count_lbl;
     private javax.swing.JPanel display_panel;
+    private javax.swing.JButton email_btn;
     private javax.swing.JMenu file_menu;
     private javax.swing.JPanel footer_panel;
     private javax.swing.JLabel headerNumber_lbl;
